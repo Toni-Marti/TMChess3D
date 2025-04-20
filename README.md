@@ -5,4 +5,4 @@ Our requirements are:
 - Chess game
 - Some animated captures
 - Diversity of piece creation techniques
-- No cut camera
+- No camera cuts
