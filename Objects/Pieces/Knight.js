@@ -4,11 +4,12 @@ import Line from "../../our_libs/geometry/line.js";
 import Point from "../../our_libs/geometry/point.js";
 import * as THREE_SHAPES from "../../our_libs/three_helpers/shapes.js";
 import { areEqual } from "../../our_libs/utility/utils.js";
+import { Base } from "./base.js";
 
-class Horse extends THREE.Object3D {
-  constructor() {
+class Knight extends THREE.Object3D {
+  constructor(material_set) {
     super();
-    this.material = new THREE.MeshNormalMaterial();
+    this.material_set = material_set;
     this.horse = this.createHorse();
     this.add(this.horse);
   }
@@ -115,7 +116,7 @@ class Horse extends THREE.Object3D {
   createJunction() {
     let junction = new THREE.CylinderGeometry(1, 1.75, 1, 4);
     junction.rotateY(Math.PI / 4);
-    let material = this.material.clone();
+    let material = this.material_set.piece_body.clone();
     material.flatShading = true;
     material.needsUpdate = true;
     return new THREE.Mesh(junction, material);
@@ -123,7 +124,7 @@ class Horse extends THREE.Object3D {
 
   createHorse() {
     let width = 3.5;
-    let object = new THREE.Object3D();
+    let horse = new THREE.Object3D();
     let shape = this.createHorseShape();
     let horse_shape_geometry = new THREE.ExtrudeGeometry(shape, {
       curveSegments: 12,
@@ -140,9 +141,18 @@ class Horse extends THREE.Object3D {
     cylinder_geometry2.rotateZ(Math.PI / 2);
     cylinder_geometry2.translate(5, 4.5, r + width - 1);
 
-    let horse_shape_brush = new CSG.Brush(horse_shape_geometry, this.material);
-    let subtraction_brush1 = new CSG.Brush(cylinder_geometry1, this.material);
-    let subtraction_brush2 = new CSG.Brush(cylinder_geometry2, this.material);
+    let horse_shape_brush = new CSG.Brush(
+      horse_shape_geometry,
+      this.material_set.piece_body
+    );
+    let subtraction_brush1 = new CSG.Brush(
+      cylinder_geometry1,
+      this.material_set.piece_body
+    );
+    let subtraction_brush2 = new CSG.Brush(
+      cylinder_geometry2,
+      this.material_set.piece_body
+    );
     let evaluator = new CSG.Evaluator();
 
     let result = evaluator.evaluate(
@@ -167,11 +177,14 @@ class Horse extends THREE.Object3D {
     });
     ears_hole_geometry.rotateY(Math.PI / 2);
     ears_hole_geometry.translate(1, 7.95, width);
-    let ears_hole_brush = new CSG.Brush(ears_hole_geometry, this.material);
+    let ears_hole_brush = new CSG.Brush(
+      ears_hole_geometry,
+      this.material_set.piece_body
+    );
 
     result = evaluator.evaluate(result, ears_hole_brush, CSG.SUBTRACTION);
 
-    object.add(result);
+    horse.add(result);
 
     let mane_roundness = 0.2;
     let mane_shape = this.createManeShape(mane_roundness);
@@ -207,10 +220,10 @@ class Horse extends THREE.Object3D {
     mane_intersect_geometry.translate(2, 0, mane_width);
     mane_intersect_geometry.rotateZ(-Math.PI / 50);
 
-    let mane_brush = new CSG.Brush(mane_geometry, this.material);
+    let mane_brush = new CSG.Brush(mane_geometry, this.material_set.piece_body);
     let mane_intersect_brush = new CSG.Brush(
       mane_intersect_geometry,
-      this.material
+      this.material_set.piece_body
     );
     let mane_result = evaluator.evaluate(
       mane_brush,
@@ -220,19 +233,28 @@ class Horse extends THREE.Object3D {
 
     mane_result.position.z = width / 2 - mane_width / 2;
 
-    object.add(mane_result);
+    horse.add(mane_result);
 
     let junction = this.createJunction();
     junction.position.z = width / 2;
     junction.position.x = 2.5;
-    object.add(junction);
+    horse.add(junction);
 
-    let base = new THREE.CylinderGeometry(3, 3, 2);
-    base.translate(2.5, -1.5, width / 2);
-    object.add(new THREE.Mesh(base, this.material));
+    horse.rotateY(-Math.PI / 2);
+    let horse_height = 9.4;
+    let base_height = 0.25;
+    let desired_height = 1.5;
+    let factor = desired_height / (horse_height + base_height);
+    horse.scale.set(factor, factor, factor);
+    horse.translateY(0.5 * factor + base_height);
+    horse.translateX(-2.5 * factor);
+    horse.translateZ((-width / 2) * factor);
 
-    return object;
+    let final_horse = new THREE.Object3D();
+    final_horse.add(horse);
+    final_horse.add(new Base(this.material_set, 0.35));
+    return final_horse;
   }
 }
 
-export { Horse };
+export { Knight };
