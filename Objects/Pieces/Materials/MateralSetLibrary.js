@@ -1,6 +1,7 @@
-import { MaterialSet } from "./MaterialSet";
+import * as THREE from "../../../libs/three.module.js";
+import { MaterialSet } from "./MaterialSet.js";
 
-classic_white = new MaterialSet(
+const classic_white = new MaterialSet(
   // Main piece body - ivory white
   new THREE.MeshStandardMaterial({
     color: 0xfffff0,
@@ -12,7 +13,7 @@ classic_white = new MaterialSet(
     color: 0xadd8e6,
     roughness: 0.8,
     metalness: 0.0,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   }),
 
   new THREE.MeshStandardMaterial({
@@ -30,9 +31,9 @@ classic_white = new MaterialSet(
   })
 );
 
-classic_black = new MaterialSet(
+const classic_black = new MaterialSet(
   new THREE.MeshStandardMaterial({
-    color: 0x1a1a1a,
+    color: 0x5555555,
     roughness: 0.3,
     metalness: 0.1,
   }),
@@ -41,7 +42,7 @@ classic_black = new MaterialSet(
     color: 0xaa0000,
     roughness: 0.8,
     metalness: 0.0,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   }),
 
   new THREE.MeshStandardMaterial({

@@ -2,10 +2,11 @@ import * as THREE from "../../libs/three.module.js";
 import * as THREE_SHAPES from "../../our_libs/three_helpers/shapes.js";
 import * as GEOMETRY_SHAPES from "../../our_libs/geometry/shapes.js";
 import Point from "../../our_libs/geometry/point.js";
+import { Base } from "./base.js";
 import { mulberry32 } from "../../our_libs/utility/utils.js";
 
 class Rook extends THREE.Object3D {
-  static base = { height: 0.15, diameter: 0.7 };
+  static base = { height: 0.25, diameter: 0.7 };
   static body = {
     height: 1 - Rook.base.height,
     bottom_diameter: 0.6,
@@ -28,12 +29,16 @@ class Rook extends THREE.Object3D {
     window_width: 0.1,
   };
 
-  constructor() {
+  constructor(material_set) {
     super();
     this.rng = mulberry32(0);
-    this.material = new THREE.MeshNormalMaterial();
-    this.base = this.createBase();
+    this.base = new Base(
+      material_set,
+      Rook.base.diameter / 2,
+      Rook.base.height
+    );
     this.add(this.base);
+    this.material_set = material_set;
     this.body_levels = this.createBodyLevels();
     this.body_levels.forEach((level) =>
       level.forEach((block) => this.add(block))
@@ -153,7 +158,7 @@ class Rook extends THREE.Object3D {
           normalized_heights[level_i] * height,
           roundness,
           2 * Math.PI * normalized_arcs[block_i] - gap_angle,
-          this.material
+          this.material_set.piece_body
         );
         let block_rotation = 2 * Math.PI * normalized_arcs[block_i];
         block.rotation.y = last_angle + block_rotation / 2;
@@ -175,7 +180,7 @@ class Rook extends THREE.Object3D {
       Rook.base.height,
       32
     );
-    let base = new THREE.Mesh(base_geometry, this.material);
+    let base = new THREE.Mesh(base_geometry, this.material_set.piece_body);
     base.position.y += Rook.base.height / 2;
     return base;
   }
@@ -217,7 +222,7 @@ class Rook extends THREE.Object3D {
       [1],
       Rook.body.average_arc_length_per_block,
       0,
-      0.005,
+      0.0035,
       Rook.body.roundness
     );
     levels1.forEach((level) =>
