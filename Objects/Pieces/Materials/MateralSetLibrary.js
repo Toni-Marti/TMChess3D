@@ -12,6 +12,7 @@ classic_white = new MaterialSet(
     color: 0xadd8e6,
     roughness: 0.8,
     metalness: 0.0,
+    side: THREE.DoubleSide
   }),
 
   new THREE.MeshStandardMaterial({
@@ -40,6 +41,7 @@ classic_black = new MaterialSet(
     color: 0xaa0000,
     roughness: 0.8,
     metalness: 0.0,
+    side: THREE.DoubleSide
   }),
 
   new THREE.MeshStandardMaterial({
