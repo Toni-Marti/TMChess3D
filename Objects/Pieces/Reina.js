@@ -1,14 +1,13 @@
-import * as THREE from '../libs/three.module.js'
-import * as CSG from '../libs/three-bvh-csg.js'
+import * as THREE from '../../libs/three.module.js'
+import * as CSG from '../../libs/three-bvh-csg.js'
 
-class Rey extends THREE.Object3D {
+class Reina extends THREE.Object3D {
   constructor(gui,titleGui) {
        super();
     this.createGUI(gui, titleGui);
 
 
     var loader = new THREE.TextureLoader();
-    var texturaMetal = loader.load('Materiales/metallic-background-with-grunge-scratched-effect.jpg');
 
   var material= new THREE.MeshNormalMaterial({ flatShading: false }) ;
 
@@ -17,15 +16,14 @@ const evaluator = new CSG.Evaluator();
 
 
   // ----- BASE -----
-  const baseRadius = 0.4; // proporcional al 0.8
+  const baseRadius = 0.38;
   const baseHeight = 0.25;
 
   const baseGeom = new THREE.CylinderGeometry(baseRadius, baseRadius, baseHeight, 64);
   const base = new CSG.Brush(baseGeom, material);
   base.position.y = baseHeight / 2;
 
-  // ----- CUERPO (Lathe) -----
-  const shape = new THREE.Shape();
+    const shape = new THREE.Shape();
  shape.moveTo(0, 0);
 shape.lineTo(0.37, 0);                         // equivalente a 1.8 * (0.35 / 2)
 shape.quadraticCurveTo(0.26, 0.28, 0.21, 0.15);
@@ -57,70 +55,29 @@ shape.quadraticCurveTo(0.175, 0.15, 0.12, 0.65);
   coronaBase.position.y = 1.85 + 0.15; // encima de la cabeza
   this.add(coronaBase);
 
-  // ------- PUNTAS -------
-  const spikeRadius = 0.03;
-  const spikeHeight = 0.18;
-  const spikeGeometry = new THREE.ConeGeometry(spikeRadius, spikeHeight, 8);
-  const numSpikes = 8;
-  const spikes = [];
-
-  for (let i = 0; i < numSpikes; i++) {
-    const angle = (i / numSpikes) * Math.PI * 2;
-    const x = coronaRadius * Math.cos(angle);
-    const z = coronaRadius * Math.sin(angle);
-
-    const spike = new THREE.Mesh(spikeGeometry, goldMaterial);
-    spike.position.set(x, 2.0 + spikeHeight / 2, z);
-    spike.lookAt(0, 2.0, 0);
-    this.add(spike);
-    spikes.push(spike);
-  }
-
-  // ------- JOYAS -------
-  const jewelRadius = 0.015;
-  const jewelGeometry = new THREE.SphereGeometry(jewelRadius, 16, 16);
-  const jewelMaterial = new THREE.MeshStandardMaterial({
-    color: 0xff0000,
-    metalness: 0.5,
-    roughness: 0.2,
-  });
-
-  for (let i = 0; i < spikes.length; i++) {
-    const spike = spikes[i];
-    const jewel = new THREE.Mesh(jewelGeometry, jewelMaterial);
-    jewel.position.copy(spike.position);
-    jewel.position.y += 0.03;
-    this.add(jewel);
-  }
 
 
-//------- CAPA desde el cuello (0, 1.7) hacia abajo -------
-const capaShape = new THREE.Shape();
-capaShape.moveTo(0, 0); // empieza en el cuello (relativo)
-capaShape.quadraticCurveTo(0.05, -0.2, 0.1, -0.4);
-capaShape.quadraticCurveTo(0.2, -0.8, 0.35, -1.4);
-capaShape.quadraticCurveTo(0.37, -1.5, 0.4, -1.55);
-capaShape.lineTo(0, -2); // largo de la capa
+// ------- CAPA -------
+ const capaShape = new THREE.Shape();
+ capaShape.moveTo(0, 0);
+ capaShape.quadraticCurveTo(0.05, -0.2, 0.1, -0.4);
+ capaShape.quadraticCurveTo(0.2, -0.8, 0.35, -1.4);
+ capaShape.quadraticCurveTo(0.37, -1.5, 0.4, -1.55);
+capaShape.lineTo(0, -1.55);
 
+ const capaPoints = capaShape.extractPoints(50).shape;
+ const capaGeometry = new THREE.LatheGeometry(capaPoints, 100);
 
-// Geometría con 180° de revolución (de hombro a hombro por detrás)
-const capaGeometry = new THREE.LatheGeometry(
-  capaShape.extractPoints(1000).shape,
-  100,
-  Math.PI / 2, // empieza desde atrás
-  Math.PI      // solo media vuelta
-);
-
-const capaMaterial = new THREE.MeshStandardMaterial({
-  color: 0x3b3b3b,
+ const capaMaterial = new THREE.MeshStandardMaterial({
+   color: 0x3b3b3b, // Gris oscuro para la tela
   metalness: 0.1,
   roughness: 0.9,
-  side: THREE.DoubleSide,
+  side: THREE.DoubleSide, // Para que se vea por dentro y fuera
 });
 
 const capaMesh = new THREE.Mesh(capaGeometry, capaMaterial);
-capaMesh.position.y = 2.070; // Se alinea con el cuello exactamente
-this.add(capaMesh);
+ capaMesh.position.y = 1.85; // Comienza en la base de la cabeza
+ this.add(capaMesh);
 
 
 }
@@ -249,5 +206,5 @@ this.add(capaMesh);
   }
 }
 
-export { Rey }
+export { Reina }
 

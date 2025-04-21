@@ -8,10 +8,10 @@ import  Stats from '../libs/stats.module.js'
 
 
 // Clases de mi proyecto
-import { Peon } from './Peon.js'
-import { Rey } from './Rey.js'
-import { Reina } from './Reina.js'
-import { Alfil } from './Alfil.js'
+import { Peon } from './Objects/Pieces/Peon.js'
+import { Rey } from './Objects/Pieces/Rey.js'
+import { Reina } from './Objects/Pieces/Reina.js'
+import { Alfil } from './Objects/Pieces/Alfil.js'
  
 /// La clase fachada del modelo
 /**

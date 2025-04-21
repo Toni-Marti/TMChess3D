@@ -1,5 +1,5 @@
-import * as THREE from '../libs/three.module.js'
-import * as CSG from '../libs/three-bvh-csg.js'
+import * as THREE from '../../libs/three.module.js'
+import * as CSG from '../../libs/three-bvh-csg.js'
 
 class Peon extends THREE.Object3D {
   constructor(gui,titleGui) {
@@ -11,7 +11,6 @@ class Peon extends THREE.Object3D {
     // Material básico
 
 const loader = new THREE.TextureLoader();
-const texture = loader.load('Materiales/metallic-background-with-grunge-scratched-effect.jpg'); // puede ser JPG o PNG
 
  var material= new THREE.MeshNormalMaterial({ flatShading: false }) ;
 
