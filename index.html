@@ -1,37 +1,33 @@
 <!DOCTYPE html>
 
 <html>
-
-<head>
+  <head>
     <title>TM Chess 3D</title>
     <meta charset="utf-8" />
     <script type="text/javascript" src="./libs/jquery.js"></script>
-    
+
     <script type="importmap">
-        {
-            "imports": {
-                "three": "../libs/three.module.js"
-            }
+      {
+        "imports": {
+          "three": "../libs/three.module.js"
         }
+      }
     </script>
 
-    <script type="module" src="Scene.js"></script>    
-    
+    <script type="module" src="Scene.js"></script>
+
     <style>
-        body{
-            margin: 0;
-            overflow: hidden; 
-        }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- Div which will show statistical information -->
+    <div id="Stats-output"></div>
 
-<!-- Div which will show statistical information -->
-<div id="Stats-output">
-</div>
-
-<!-- Div which will hold the Output -->
-<div id="WebGL-output">
-</div>
-</body>
+    <!-- Div which will hold the Output -->
+    <div id="WebGL-output"></div>
+  </body>
 </html>
