@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>TM Chess 3D</title>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="../libs/jquery.js"></script>
+    <script type="module" src="2d_game.js"></script>
+    <style>
+      #board {
+        width: 500px;
+        height: 500px;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        border: 2px solid black;
+      }
+      .square {
+        width: 100%;
+        height: 100%;
+        border: 1px solid black;
+      }
+      .white-square {
+        background-color: #f0d9b5;
+      }
+      .black-square {
+        background-color: #b58863;
+      }
+
+      .piece {
+        font-weight: bolder;
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+          "Lucida Sans", Arial, sans-serif;
+        font-size: 2em;
+      }
+      .active:hover {
+        cursor: pointer;
+        color: yellow;
+      }
+
+      .white-piece {
+        color: white;
+      }
+      .black-piece {
+        color: black;
+      }
+
+      .selected {
+        color: aqua;
+      }
+
+      .highlight {
+        background-color: yellow;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TM Chess 2D</h1>
+    <p id="turn">Turn :</p>
+    <p id="state">State :</p>
+    <p></p>
+    <div id="board"></div>
+  </body>
+</html>
