@@ -1,41 +1,39 @@
 import * as THREE from "../../libs/three.module.js";
 import * as CSG from "../../libs/three-bvh-csg.js";
-import { Base } from "./base.js";
+import { Abstract_piece } from './Abstract_piece.js'
 
-class Rey extends THREE.Object3D {
+class King extends Abstract_piece {
   constructor(material_set) {
-    super();
+    super(material_set, 0.4);
 
     this.material_set = material_set;
 
     const evaluator = new CSG.Evaluator();
 
-    this.add(new Base(material_set));
+
 
     // ----- Body (Lathe) -----
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);
-    shape.lineTo(0.37, 0); // equivalente a 1.8 * (0.35 / 2)
-    shape.quadraticCurveTo(0.26, 0.28, 0.21, 0.15);
-    shape.quadraticCurveTo(0.175, 0.15, 0.12, 0.65);
-    shape.quadraticCurveTo(0.175, 0.6, 0.16, 1.4);
-    shape.lineTo(0.09, 1.7);
+   const shape = new THREE.Shape();
+shape.moveTo(0.35, 0.25);
+shape.lineTo(0.3, 0.25);
+shape.quadraticCurveTo(0.4, 0.3, 0.3, 0.4);
+shape.lineTo(0.2, 0.6);
+shape.quadraticCurveTo(0, 1, 0.2, 1.2);
+shape.quadraticCurveTo(0.36, 1.25, 0.4, 1.3);
+shape.quadraticCurveTo(0.4, 1.3, 0.36, 1.35);
+shape.quadraticCurveTo(0.3, 1.35, 0.35, 1.4);
+shape.lineTo(0.2, 1.45)
+shape.lineTo(0.4, 1.65);;
+shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
 
     const latheGeom = new THREE.LatheGeometry(
       shape.extractPoints(50).shape,
       100
     );
     const body = new THREE.Mesh(latheGeom, material_set.piece_body);
-    body.position.y = 0.2;
 
     this.add(body);
 
-    // ------- HEAD -------
-    const headRadius = 0.2; // max ancho de la cabeza
-    const headGeometry = new THREE.SphereGeometry(headRadius, 32, 32);
-    const headMesh = new THREE.Mesh(headGeometry, material_set.piece_body);
-    headMesh.position.y = 1.85; // base(0.25) + cuerpo(1.4) + radio cabeza(0.2)
-    this.add(headMesh);
 
     // ------- CROWN -------
     const coronaRadius = 0.2;
@@ -52,7 +50,7 @@ class Rey extends THREE.Object3D {
       this.material_set.metal
     );
     coronaBase.rotation.x = Math.PI / 2;
-    coronaBase.position.y = 1.85 + 0.15; // encima de la cabeza
+    coronaBase.position.y = 1.8; // encima de la cabeza
     this.add(coronaBase);
 
     // ------- SPIKES -------
@@ -68,7 +66,7 @@ class Rey extends THREE.Object3D {
       const z = coronaRadius * Math.sin(angle);
 
       const spike = new THREE.Mesh(spikeGeometry, material_set.metal);
-      spike.position.set(x, 2.0 + spikeHeight / 2, z);
+      spike.position.set(x, 1.84 + spikeHeight / 2, z);
       spike.lookAt(0, 2.0, 0);
       this.add(spike);
       spikes.push(spike);
@@ -92,7 +90,7 @@ class Rey extends THREE.Object3D {
     capaShape.quadraticCurveTo(0.05, -0.2, 0.2, -0.4);
     capaShape.quadraticCurveTo(0.2, -0.8, 0.35, -1.4);
     capaShape.quadraticCurveTo(0.37, -1.5, 0.4, -1.55);
-    capaShape.lineTo(0, -1.9); // cape's length
+
 
     // Geometry with 180° of revolutión
     const capaGeometry = new THREE.LatheGeometry(
@@ -103,28 +101,12 @@ class Rey extends THREE.Object3D {
     );
 
     const capaMesh = new THREE.Mesh(capaGeometry, material_set.cloth);
-    capaMesh.position.y = 2.07;
+    capaMesh.position.y = 1.6;
 
     this.add(capaMesh);
   }
 
-  update() {
-    this.position.set(
-      this.guiControls.posX,
-      this.guiControls.posY,
-      this.guiControls.posZ
-    );
-    this.rotation.set(
-      this.guiControls.rotX,
-      this.guiControls.rotY,
-      this.guiControls.rotZ
-    );
-    this.scale.set(
-      this.guiControls.sizeX,
-      this.guiControls.sizeY,
-      this.guiControls.sizeZ
-    );
-  }
+  update() {}
 }
 
-export { Rey };
+export { King };

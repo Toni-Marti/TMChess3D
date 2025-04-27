@@ -1,15 +1,12 @@
 import * as THREE from '../../libs/three.module.js'
 import * as CSG from '../../libs/three-bvh-csg.js'
-import { Base } from './base.js'
+import { Abstract_piece } from './Abstract_piece.js'
 
-class Alfil extends THREE.Object3D {
+class Bishop extends Abstract_piece {
   constructor(material_set) {
-    super();
-
+    super(material_set, 0.35);
 
     const evaluator = new CSG.Evaluator();
-
-    this.add(new Base(material_set, 0.35));
 
     // ----- Diagonal cut -----
     var cut = new THREE.BoxGeometry(0.02, 0.7, 0.45);
@@ -19,7 +16,7 @@ class Alfil extends THREE.Object3D {
 
     var shape = new THREE.Shape();
     shape.moveTo(0, 0);
-    shape.lineTo(0.315, 0);                         
+    shape.lineTo(0.315, 0);
     shape.quadraticCurveTo(0.26, 0.28, 0.21, 0.15);
     shape.quadraticCurveTo(0.175, 0.15, 0.12, 0.65);
     shape.quadraticCurveTo(0.12, 0.7, 0.1, 0.85);
@@ -52,14 +49,10 @@ class Alfil extends THREE.Object3D {
 
 
   update() {
-
-    this.position.set(this.guiControls.posX, this.guiControls.posY, this.guiControls.posZ);
-    this.rotation.set(this.guiControls.rotX, this.guiControls.rotY, this.guiControls.rotZ);
-    this.scale.set(this.guiControls.sizeX, this.guiControls.sizeY, this.guiControls.sizeZ);
   }
 }
 
-export { Alfil };
+export { Bishop };
 
 
 

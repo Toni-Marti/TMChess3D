@@ -2,10 +2,10 @@ import * as THREE from "../../libs/three.module.js";
 import * as THREE_SHAPES from "../../our_libs/three_helpers/shapes.js";
 import * as GEOMETRY_SHAPES from "../../our_libs/geometry/shapes.js";
 import Point from "../../our_libs/geometry/point.js";
-import { Base } from "./base.js";
 import { mulberry32 } from "../../our_libs/utility/utils.js";
+import { Abstract_piece } from './Abstract_piece.js'
 
-class Rook extends THREE.Object3D {
+class Rook extends Abstract_piece {
   static base = { height: 0.25, diameter: 0.7 };
   static body = {
     height: 1 - Rook.base.height,
@@ -30,14 +30,8 @@ class Rook extends THREE.Object3D {
   };
 
   constructor(material_set) {
-    super();
+    super(material_set, Rook.base.diameter/2);
     this.rng = mulberry32(0);
-    this.base = new Base(
-      material_set,
-      Rook.base.diameter / 2,
-      Rook.base.height
-    );
-    this.add(this.base);
     this.material_set = material_set;
     this.body_levels = this.createBodyLevels();
     this.body_levels.forEach((level) =>

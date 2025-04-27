@@ -1,8 +1,9 @@
-import { Peon } from "./Peon.js";
+import { Pawn } from "./Pawn.js";
 import { Knight } from "./Knight.js";
-import { Alfil } from "./Alfil.js";
+import { Bishop } from "./Bishop.js";
 import { Rook } from "./Rook.js";
-import { Reina } from "./Reina.js";
-import { Rey } from "./Rey.js";
+import { Queen } from "./Queen.js";
+import { King } from "./King.js";
 
-export { Peon, Knight, Alfil, Rook, Reina, Rey };
+
+export { Pawn, Knight, Bishop, Rook, Queen, King };
