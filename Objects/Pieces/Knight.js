@@ -4,11 +4,11 @@ import Line from "../../our_libs/geometry/line.js";
 import Point from "../../our_libs/geometry/point.js";
 import * as THREE_SHAPES from "../../our_libs/three_helpers/shapes.js";
 import { areEqual } from "../../our_libs/utility/utils.js";
-import { Base } from "./base.js";
+import { Abstract_piece } from './Abstract_piece.js'
 
-class Knight extends THREE.Object3D {
+class Knight extends Abstract_piece {
   constructor(material_set) {
-    super();
+    super(material_set, 0.35);
     this.material_set = material_set;
     this.horse = this.createHorse();
     this.add(this.horse);
@@ -81,6 +81,8 @@ class Knight extends THREE.Object3D {
     shape.quadraticCurveTo(2.1, 0, first_point.x, first_point.y);
 
     return shape;
+
+
   }
 
   createManeShape(roundness) {
@@ -116,9 +118,7 @@ class Knight extends THREE.Object3D {
   createJunction() {
     let junction = new THREE.CylinderGeometry(1, 1.75, 1, 4);
     junction.rotateY(Math.PI / 4);
-    let material = this.material_set.piece_body.clone();
-    material.flatShading = true;
-    material.needsUpdate = true;
+    let material = this.material_set.piece_body_flat;
     return new THREE.Mesh(junction, material);
   }
 
@@ -252,7 +252,10 @@ class Knight extends THREE.Object3D {
 
     let final_horse = new THREE.Object3D();
     final_horse.add(horse);
-    final_horse.add(new Base(this.material_set, 0.35));
+
+
+    final_horse.rotateY(Math.PI/4);
+
     return final_horse;
   }
 }

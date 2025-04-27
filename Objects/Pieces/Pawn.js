@@ -1,16 +1,10 @@
 import * as THREE from '../../libs/three.module.js'
 import * as CSG from '../../libs/three-bvh-csg.js'
-import { Base } from './base.js'
+import { Abstract_piece } from './Abstract_piece.js'
 
-class Peon extends THREE.Object3D {
+class Pawn extends Abstract_piece {
   constructor(material_set) {
-    super();
-
-
-
-    this.add(new Base(material_set, 0.3));
-
-
+    super(material_set, 0.3);
 
     var brazo1Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.7, 16);
     var brazo3Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
@@ -74,6 +68,8 @@ class Peon extends THREE.Object3D {
       position.setXYZ(i, vertex.x, vertex.y, vertex.z);
     }
 
+    helmetGeometry.computeVertexNormals();
+
     helmetGeometry.translate(0, 1.05, 0.2);
 
     const helmet = new CSG.Brush(helmetGeometry, material_set.piece_body);
@@ -98,13 +94,10 @@ class Peon extends THREE.Object3D {
   
   update() {
    
-    this.position.set(this.guiControls.posX, this.guiControls.posY, this.guiControls.posZ);
-    this.rotation.set(this.guiControls.rotX, this.guiControls.rotY, this.guiControls.rotZ);
-    this.scale.set(this.guiControls.sizeX, this.guiControls.sizeY, this.guiControls.sizeZ);
   }
 }
 
-export { Peon };
+export { Pawn };
 
 
 
