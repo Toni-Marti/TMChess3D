@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>TM Chess 3D</title>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="../libs/jquery.js"></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../libs/three.module.js"
+        }
+      }
+    </script>
+
+    <script type="module" src="ShowcaseScene.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: "Arial", sans-serif;
+      }
+
+      #controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .dropdown {
+        padding: 8px 12px;
+        width: 180px;
+        border: 1px solid #999;
+        border-radius: 4px;
+        background-color: white;
+        font-size: 16px;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+
+      .dropdown:hover,
+      .dropdown:focus {
+        border-color: #555;
+      }
+
+      .v-sep {
+        height: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Div which will hold the Output -->
+    <div id="WebGL-output"></div>
+
+    <div id="controls">
+      <label for="piece-select">Piece:</label>
+      <select id="piece-select" class="dropdown">
+        <option value="pawn">Pawn</option>
+        <option value="rook">Rook</option>
+        <option value="knight">Knight</option>
+        <option value="bishop">Bishop</option>
+        <option value="queen">Queen</option>
+        <option value="king">King</option>
+      </select>
+      <div class="v-sep"></div>
+      <label for="color-select">Color:</label>
+      <select id="color-select" class="dropdown">
+        <option value="white" class="option">White</option>
+        <option value="black" class="option">Black</option>
+      </select>
+    </div>
+  </body>
+</html>
