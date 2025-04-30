@@ -69,3 +69,4 @@ shape.quadraticCurveTo(0.3, 1.7, 0, 1.75);
 
 export { Queen }
 
+
