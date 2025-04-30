@@ -24,11 +24,9 @@ class Board extends THREE.Object3D {
           row * squareSize - (size / 2) * squareSize
         );
 
-        // Invertimos el ID del row
-        const invertedRow = size - 1 - row;
-        square.name = `square_${invertedRow}_${col}`;
-        square.userData = { row: invertedRow, col: col };
-
+        const invertedcol = size - 1 - col;
+        square.name = `square_${row}_${invertedcol}`;
+        square.userData = { row, invertedcol };
         board.add(square);
       }
     }
