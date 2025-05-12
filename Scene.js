@@ -1,6 +1,4 @@
 import * as THREE from "../libs/three.module.js";
-import { TrackballControls } from "../libs/TrackballControls.js";
-
 import * as Pieces from "./Objects/Pieces/AllPieces.js";
 import * as PiceMaterialSets from "./Objects/Pieces/Materials/MaterialSetLibrary.js";
 import { Board } from "./Objects/Board.js";
@@ -15,7 +13,7 @@ class MyScene extends THREE.Scene {
     this.createCamera();
     this.axis = new THREE.AxesHelper(1);
     this.add(this.axis);
-
+    this.currentTurn = "white"; 
     this.highlightMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green highlight
     this.normalMaterials = {}; // To store original square materials
 
@@ -26,6 +24,40 @@ class MyScene extends THREE.Scene {
     this.add(board);
   }
 
+  rotateCameraAroundBoard() {
+    const radius = 13; 
+    const height = 10;
+    const center = new THREE.Vector3(0, 0, 0);
+    const duration = 2000; 
+  
+    const startAngle = this.currentTurn === "white" ? Math.PI : 0;
+    const endAngle = this.currentTurn === "white" ? 0 : -Math.PI;
+  
+    const startTime = performance.now();
+  
+    const animate = (time) => {
+      const elapsed = time - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const angle = startAngle + (endAngle - startAngle) * t;
+  
+      const x = radius * Math.sin(angle);
+      const z = radius * Math.cos(angle);
+      this.camera.position.set(x, height, z);
+  
+      // Ahora, sin controles, sólo usamos lookAt para enfocar el centro
+      this.camera.lookAt(center);
+  
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+  
+    // Alternar turno antes de iniciar animación
+    this.currentTurn = this.currentTurn === "white" ? "black" : "white";
+  
+    requestAnimationFrame(animate);
+  }
+  
   createCamera() {
     this.camera = new THREE.PerspectiveCamera(
       45,
@@ -33,20 +65,11 @@ class MyScene extends THREE.Scene {
       0.01,
       1000
     );
-    this.camera.position.set(12, 11, 12);
-    var look = new THREE.Vector3(3, 3, 3);
+    this.camera.position.set(0, 12, -13);
+    var look = new THREE.Vector3(0, 0, 0);
     this.camera.lookAt(look);
     this.add(this.camera);
 
-    this.cameraControl = new TrackballControls(
-      this.camera,
-      this.renderer.domElement
-    );
-
-    this.cameraControl.rotateSpeed = 5;
-    this.cameraControl.zoomSpeed = 2;
-    this.cameraControl.panSpeed = 0.5;
-    this.cameraControl.target = look;
   }
 
   createPieces() {
@@ -128,10 +151,12 @@ class MyScene extends THREE.Scene {
     }
   }
 
-  onMouseMove(event) {
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  }
+ onMouseMove(event) {
+  const rect = this.renderer.domElement.getBoundingClientRect();
+  this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
 
   createLights() {
     this.ambientLight = new THREE.AmbientLight("white", 0.5);
@@ -151,8 +176,17 @@ class MyScene extends THREE.Scene {
     return renderer;
   }
 
+
+
   onClick(event) {
+    // Clean up previous ray visualization
+    this.cleanupRayVisualization();
+
     this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.children);
+
+    // Visualize ray and collisions
+    this.visualizeRay(intersects);
 
     const validPieceNames = [
       "white_king",
@@ -189,7 +223,6 @@ class MyScene extends THREE.Scene {
       "black_pawn8", // Peones negros
     ];
 
-    const intersects = this.raycaster.intersectObjects(this.children);
 
     console.log("Raycaster intersects:", intersects);
 
@@ -204,6 +237,7 @@ class MyScene extends THREE.Scene {
           this.selectedPiece.position.y = 0;
           this.selectedPiece = null;
           this.resetSquareHighlights();
+          this.rotateCameraAroundBoard();
         }
         return;
       }
@@ -285,8 +319,54 @@ class MyScene extends THREE.Scene {
 
   update() {
     this.renderer.render(this, this.getCamera());
-    this.cameraControl.update();
     requestAnimationFrame(() => this.update());
+  }
+
+  cleanupRayVisualization() {
+    // Remove ray line if it exists
+    if (this.rayLine) {
+      this.remove(this.rayLine);
+      this.rayLine = null;
+    }
+
+    // Remove collision markers if they exist
+    if (this.collisionMarkers) {
+      this.collisionMarkers.forEach((marker) => this.remove(marker));
+      this.collisionMarkers = [];
+    }
+  }
+
+  visualizeRay(intersects) {
+    // Create ray line
+    const rayOrigin = this.raycaster.ray.origin.clone();
+    const rayDirection = this.raycaster.ray.direction.clone().normalize();
+    const rayLength = 100; // Make ray long enough to see
+    const rayEnd = rayOrigin
+      .clone()
+      .add(rayDirection.clone().multiplyScalar(rayLength));
+
+    const rayGeometry = new THREE.BufferGeometry().setFromPoints([
+      rayOrigin,
+      rayEnd,
+    ]);
+    const rayMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 }); // Red ray
+    this.rayLine = new THREE.Line(rayGeometry, rayMaterial);
+    this.rayLine.name = "raycasterRay";
+    this.add(this.rayLine);
+
+    // Create collision markers
+    this.collisionMarkers = [];
+    intersects.forEach((intersect, index) => {
+      const markerGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+      const markerMaterial = new THREE.MeshBasicMaterial({
+        color: index === 0 ? 0xff0000 : 0xffff00, // First collision green, others yellow
+      });
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.copy(intersect.point);
+      marker.name = "collisionMarker";
+      this.collisionMarkers.push(marker);
+      this.add(marker);
+    });
   }
 }
 
