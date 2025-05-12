@@ -4,12 +4,11 @@ import Line from "../../our_libs/geometry/line.js";
 import Point from "../../our_libs/geometry/point.js";
 import * as THREE_SHAPES from "../../our_libs/three_helpers/shapes.js";
 import { areEqual } from "../../our_libs/utility/utils.js";
-import { Abstract_piece } from './Abstract_piece.js'
+import { AbstractPiece } from "./AbstractPiece.js";
 
-class Knight extends Abstract_piece {
-  constructor(material_set) {
-    super(material_set, 0.35);
-    this.material_set = material_set;
+class Knight extends AbstractPiece {
+  constructor(material_set, row, col) {
+    super(material_set, row, col, 0.35);
     this.horse = this.createHorse();
     this.add(this.horse);
   }
@@ -81,8 +80,6 @@ class Knight extends Abstract_piece {
     shape.quadraticCurveTo(2.1, 0, first_point.x, first_point.y);
 
     return shape;
-
-
   }
 
   createManeShape(roundness) {
@@ -253,8 +250,7 @@ class Knight extends Abstract_piece {
     let final_horse = new THREE.Object3D();
     final_horse.add(horse);
 
-
-    final_horse.rotateY(Math.PI/4);
+    final_horse.rotateY(Math.PI / 4);
 
     return final_horse;
   }

@@ -1,10 +1,10 @@
 import * as THREE from "../../libs/three.module.js";
 import * as CSG from "../../libs/three-bvh-csg.js";
-import { Abstract_piece } from "./Abstract_piece.js";
+import { AbstractPiece } from "./AbstractPiece.js";
 
-class Pawn extends Abstract_piece {
-  constructor(material_set) {
-    super(material_set, 0.3);
+class Pawn extends AbstractPiece {
+  constructor(material_set, row, col) {
+    super(material_set, row, col, 0.3);
 
     var brazo1Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.7, 16);
     var brazo3Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);

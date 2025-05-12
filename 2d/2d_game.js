@@ -35,6 +35,25 @@ function initBoard() {
   }
 }
 
+function letterToEmoji(l) {
+  switch (l.toUpperCase()) {
+    case "P":
+      return "♟";
+    case "R":
+      return "♜";
+    case "N":
+      return "♞";
+    case "B":
+      return "♝";
+    case "Q":
+      return "♛";
+    case "K":
+      return "♚";
+    default:
+      return "";
+  }
+}
+
 function draw() {
   document.getElementById("turn").textContent = "Turn: " + game.currentPlayer();
   document.getElementById("state").textContent = "State: " + game.gameState();
@@ -51,7 +70,7 @@ function draw() {
       let piece = game.getSquare(r, c);
       let color = ChessGame.getPieceColor(piece);
       if (piece !== null) {
-        button.textContent = piece.toUpperCase();
+        button.textContent = letterToEmoji(piece);
         button.className += ` piece ${color}-piece`;
 
         if (color === game.currentPlayer()) {

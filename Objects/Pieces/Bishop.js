@@ -1,10 +1,10 @@
-import * as THREE from '../../libs/three.module.js'
-import * as CSG from '../../libs/three-bvh-csg.js'
-import { Abstract_piece } from './Abstract_piece.js'
+import * as THREE from "../../libs/three.module.js";
+import * as CSG from "../../libs/three-bvh-csg.js";
+import { AbstractPiece } from "./AbstractPiece.js";
 
-class Bishop extends Abstract_piece {
-  constructor(material_set) {
-    super(material_set, 0.35);
+class Bishop extends AbstractPiece {
+  constructor(material_set, row, col) {
+    super(material_set, row, col, 0.35);
 
     const evaluator = new CSG.Evaluator();
 
@@ -31,29 +31,18 @@ class Bishop extends Abstract_piece {
     crownBase.translate(0, 1.45, 0);
     var crown = new CSG.Brush(crownBase, material_set.piece_body);
 
-
     var crossVert = new THREE.SphereGeometry(0.035, 64, 64);
     crossVert.translate(0, 1.65, 0);
     var top = new CSG.Brush(crossVert, material_set.piece_body);
-
 
     var q1 = evaluator.evaluate(body, crown, CSG.ADDITION);
     var q3 = evaluator.evaluate(q1, cutcut, CSG.SUBTRACTION);
     var q4 = evaluator.evaluate(q3, top, CSG.ADDITION);
 
-
     this.add(q4);
-
-
   }
 
-
-  update() {
-  }
+  update() {}
 }
 
 export { Bishop };
-
-
-
-
