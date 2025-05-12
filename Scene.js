@@ -90,6 +90,8 @@ class MyScene extends THREE.Scene {
       new Pieces.Rook(material_set.clone(), row, 7),
     ];
 
+    pieces[color === "white" ? 6 : 1].rotation.y += -Math.PI / 2;
+
     for (let i = 0; i < 8; i++)
       pieces.push(new Pieces.Pawn(material_set.clone(), pawnRow, i));
 
@@ -106,7 +108,7 @@ class MyScene extends THREE.Scene {
       piece.position.set(square_position.x, 0, square_position.z);
       piece.name = "piece";
       if (color === "black") {
-        piece.rotation.y = Math.PI;
+        piece.rotation.y += Math.PI;
       }
       this.add(piece);
     }
@@ -142,16 +144,8 @@ class MyScene extends THREE.Scene {
   }
 
   onClick(event) {
-    // Clean up previous ray visualization
-    this.cleanupRayVisualization();
-
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(this.children);
-
-    // Visualize ray and collisions
-    this.visualizeRay(intersects);
-
-    console.log("Raycaster intersects:", intersects);
 
     // Original code continues...
     if (intersects.length > 0) {
@@ -160,7 +154,9 @@ class MyScene extends THREE.Scene {
       if (this.selectedPiece) {
         if (clickedObject.name.startsWith("square_")) {
           const targetPos = clickedObject.position.clone();
-          this.selectedPiece.position.set(targetPos.x, 0, targetPos.z);
+          targetPos.y = 0;
+          const distance = this.selectedPiece.position.distanceTo(targetPos);
+          this.selectedPiece.move(targetPos, distance * 1500);
           this.selectedPiece.position.y = 0;
           this.selectedPiece = null;
           this.resetSquareHighlights();
@@ -170,7 +166,7 @@ class MyScene extends THREE.Scene {
       }
       let piece = this.isPiece(clickedObject);
       if (piece) {
-        piece.position.y = 2;
+        piece.position.y = 0.2;
         this.selectedPiece = piece;
         this.highlightAllSquares();
         return;
@@ -249,53 +245,6 @@ class MyScene extends THREE.Scene {
   update() {
     this.renderer.render(this, this.getCamera());
     requestAnimationFrame(() => this.update());
-  }
-
-  cleanupRayVisualization() {
-    // Remove ray line if it exists
-    if (this.rayLine) {
-      this.remove(this.rayLine);
-      this.rayLine = null;
-    }
-
-    // Remove collision markers if they exist
-    if (this.collisionMarkers) {
-      this.collisionMarkers.forEach((marker) => this.remove(marker));
-      this.collisionMarkers = [];
-    }
-  }
-
-  visualizeRay(intersects) {
-    // Create ray line
-    const rayOrigin = this.raycaster.ray.origin.clone();
-    const rayDirection = this.raycaster.ray.direction.clone().normalize();
-    const rayLength = 100; // Make ray long enough to see
-    const rayEnd = rayOrigin
-      .clone()
-      .add(rayDirection.clone().multiplyScalar(rayLength));
-
-    const rayGeometry = new THREE.BufferGeometry().setFromPoints([
-      rayOrigin,
-      rayEnd,
-    ]);
-    const rayMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 }); // Red ray
-    this.rayLine = new THREE.Line(rayGeometry, rayMaterial);
-    this.rayLine.name = "raycasterRay";
-    this.add(this.rayLine);
-
-    // Create collision markers
-    this.collisionMarkers = [];
-    intersects.forEach((intersect, index) => {
-      const markerGeometry = new THREE.SphereGeometry(0.02, 16, 16);
-      const markerMaterial = new THREE.MeshBasicMaterial({
-        color: index === 0 ? 0xff0000 : 0xffff00, // First collision green, others yellow
-      });
-      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-      marker.position.copy(intersect.point);
-      marker.name = "collisionMarker";
-      this.collisionMarkers.push(marker);
-      this.add(marker);
-    });
   }
 }
 

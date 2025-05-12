@@ -242,6 +242,25 @@ class ChessGame {
     return this.#board[row][col];
   }
 
+  getNumberOfPiecesInBoard(color = null) {
+    if (color !== "white" && color !== "black") {
+      return (
+        this.getNumberOfPiecesInBoard("white") +
+        this.getNumberOfPiecesInBoard("black")
+      );
+    }
+
+    let count = 0;
+    for (let row = 0; row < this.#board.length; row++) {
+      for (let col = 0; col < this.#board[row].length; col++) {
+        if (ChessGame.getPieceColor(this.getSquare(row, col)) === color) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
   getKingPosition(color) {
     let king = undefined;
     if (color === "white") {
