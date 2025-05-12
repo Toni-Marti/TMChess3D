@@ -1,5 +1,5 @@
 import * as THREE from "../../libs/three.module.js";
-import * as CSG from "../../libs/three-bvh-csg.js";
+import * as TWEEN from "../../libs/tween.module.js";
 import { Base } from "./base.js";
 
 class AbstractPiece extends THREE.Object3D {
@@ -13,7 +13,32 @@ class AbstractPiece extends THREE.Object3D {
 
   update() {}
 
-  move(to, time) {}
+  move(to, duration) {
+    const starting_pos = this.position.clone();
+    console.log("Starting position:", starting_pos);
+
+    const startTime = performance.now();
+
+    const animate = (time) => {
+      const elapsed = time - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      this.position.x =
+        starting_pos.x +
+        (to.x - starting_pos.x) * TWEEN.Easing.Quadratic.Out(t);
+      this.position.z =
+        starting_pos.z +
+        (to.z - starting_pos.z) * TWEEN.Easing.Quadratic.Out(t);
+      this.position.y =
+        starting_pos.y + (to.y - starting_pos.y) * TWEEN.Easing.Quadratic.In(t);
+
+      console.log("Y:", this.position.y);
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }
 
   capture(piece, all_other_pieces, captured_ending_pos, time, camera) {}
 }
