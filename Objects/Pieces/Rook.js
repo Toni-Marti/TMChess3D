@@ -3,9 +3,9 @@ import * as THREE_SHAPES from "../../our_libs/three_helpers/shapes.js";
 import * as GEOMETRY_SHAPES from "../../our_libs/geometry/shapes.js";
 import Point from "../../our_libs/geometry/point.js";
 import { mulberry32 } from "../../our_libs/utility/utils.js";
-import { Abstract_piece } from './Abstract_piece.js'
+import { AbstractPiece } from "./AbstractPiece.js";
 
-class Rook extends Abstract_piece {
+class Rook extends AbstractPiece {
   static base = { height: 0.25, diameter: 0.7 };
   static body = {
     height: 1 - Rook.base.height,
@@ -29,8 +29,8 @@ class Rook extends Abstract_piece {
     window_width: 0.1,
   };
 
-  constructor(material_set) {
-    super(material_set, Rook.base.diameter/2);
+  constructor(material_set, row, col) {
+    super(material_set, row, col, Rook.base.diameter / 2);
     this.rng = mulberry32(0);
     this.material_set = material_set;
     this.body_levels = this.createBodyLevels();

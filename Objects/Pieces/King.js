@@ -1,30 +1,26 @@
 import * as THREE from "../../libs/three.module.js";
 import * as CSG from "../../libs/three-bvh-csg.js";
-import { Abstract_piece } from './Abstract_piece.js'
+import { AbstractPiece } from "./AbstractPiece.js";
 
-class King extends Abstract_piece {
-  constructor(material_set) {
-    super(material_set, 0.4);
-
-    this.material_set = material_set;
+class King extends AbstractPiece {
+  constructor(material_set, row, col) {
+    super(material_set, row, col, 0.4);
 
     const evaluator = new CSG.Evaluator();
 
-
-
     // ----- Body (Lathe) -----
-   const shape = new THREE.Shape();
-shape.moveTo(0.35, 0.25);
-shape.lineTo(0.3, 0.25);
-shape.quadraticCurveTo(0.4, 0.3, 0.3, 0.4);
-shape.lineTo(0.2, 0.6);
-shape.quadraticCurveTo(0, 1, 0.2, 1.2);
-shape.quadraticCurveTo(0.36, 1.25, 0.4, 1.3);
-shape.quadraticCurveTo(0.4, 1.3, 0.36, 1.35);
-shape.quadraticCurveTo(0.3, 1.35, 0.35, 1.4);
-shape.lineTo(0.2, 1.45)
-shape.lineTo(0.4, 1.65);;
-shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
+    const shape = new THREE.Shape();
+    shape.moveTo(0.35, 0.25);
+    shape.lineTo(0.3, 0.25);
+    shape.quadraticCurveTo(0.4, 0.3, 0.3, 0.4);
+    shape.lineTo(0.2, 0.6);
+    shape.quadraticCurveTo(0, 1, 0.2, 1.2);
+    shape.quadraticCurveTo(0.36, 1.25, 0.4, 1.3);
+    shape.quadraticCurveTo(0.4, 1.3, 0.36, 1.35);
+    shape.quadraticCurveTo(0.3, 1.35, 0.35, 1.4);
+    shape.lineTo(0.2, 1.45);
+    shape.lineTo(0.4, 1.65);
+    shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
 
     const latheGeom = new THREE.LatheGeometry(
       shape.extractPoints(50).shape,
@@ -33,7 +29,6 @@ shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
     const body = new THREE.Mesh(latheGeom, material_set.piece_body);
 
     this.add(body);
-
 
     // ------- CROWN -------
     const coronaRadius = 0.2;
@@ -91,7 +86,6 @@ shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
     capaShape.quadraticCurveTo(0.2, -0.8, 0.35, -1.4);
     capaShape.quadraticCurveTo(0.37, -1.5, 0.4, -1.55);
 
-
     // Geometry with 180° of revolutión
     const capaGeometry = new THREE.LatheGeometry(
       capaShape.extractPoints(1000).shape,
@@ -110,4 +104,3 @@ shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
 }
 
 export { King };
-
