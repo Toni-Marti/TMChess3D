@@ -15,7 +15,6 @@ class AbstractPiece extends THREE.Object3D {
 
   move(to, duration) {
     const starting_pos = this.position.clone();
-    console.log("Starting position:", starting_pos);
 
     const startTime = performance.now();
 
@@ -31,7 +30,7 @@ class AbstractPiece extends THREE.Object3D {
       this.position.y =
         starting_pos.y + (to.y - starting_pos.y) * TWEEN.Easing.Quadratic.In(t);
 
-      console.log("Y:", this.position.y);
+      
       if (t < 1) {
         requestAnimationFrame(animate);
       }

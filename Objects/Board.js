@@ -42,7 +42,7 @@ class Board extends THREE.Object3D {
         square.name = `square_${row}_${invertedcol}`;
         square.userData = { row, invertedcol };
         board.add(square);
-        this.squares[row][col] = square;
+        this.squares[row][7-col] = square;
       }
     }
 
