@@ -2,6 +2,7 @@ import * as THREE from "../libs/three.module.js";
 import * as Pieces from "./Objects/Pieces/AllPieces.js";
 import * as PiceMaterialSets from "./Objects/Pieces/Materials/MaterialSetLibrary.js";
 import { Board } from "./Objects/Board.js";
+import { ChessGame } from "./our_libs/chess/game_handler.js";
 
 class MyScene extends THREE.Scene {
   constructor(myCanvas) {
@@ -16,7 +17,7 @@ class MyScene extends THREE.Scene {
     this.currentTurn = "white";
     this.highlightMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green highlight
     this.normalMaterials = {}; // To store original square materials
-
+    this.chessEngine = new ChessGame();
     this.board = new Board();
     this.board.name = "chessBoard";
     this.add(this.board);
@@ -90,7 +91,7 @@ class MyScene extends THREE.Scene {
       new Pieces.Rook(material_set.clone(), row, 7),
     ];
 
-    pieces[color === "white" ? 6 : 1].rotation.y += -Math.PI / 2;
+    pieces[color === "white" ? 1: 6].rotation.y += -Math.PI / 2;
 
     for (let i = 0; i < 8; i++)
       pieces.push(new Pieces.Pawn(material_set.clone(), pawnRow, i));
@@ -150,27 +151,43 @@ class MyScene extends THREE.Scene {
     // Original code continues...
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
-      // console.log("Clicked object:", clickedObject.name);
       if (this.selectedPiece) {
         if (clickedObject.name.startsWith("square_")) {
+          const square = clickedObject;
+          const targetrow = Number(square.name[square.name.length - 3]);
+          const targetcol = Number(square.name[square.name.length - 1]);
+          let isvalidmove = false;
+          for(let move of this.chessEngine.availableMoves(this.selectedPiece.row, this.selectedPiece.col)) {
+            if (move[0] == targetrow && move[1] == targetcol) {
+              isvalidmove = true;
+              break;
+            }
+          }
+          if (!isvalidmove) {
+            return;
+          }
+
+          this.chessEngine.applyMove([this.selectedPiece.row, this.selectedPiece.col], [targetrow, targetcol]);
           const targetPos = clickedObject.position.clone();
           targetPos.y = 0;
-          const distance = this.selectedPiece.position.distanceTo(targetPos);
+          const distance = this.selectedPiece.position.distanceTo(targetPos);  //TODO Enroquebro
+
           this.selectedPiece.move(targetPos, distance * 1500);
-          this.selectedPiece.position.y = 0;
+          this.selectedPiece.row = targetrow;
+          this.selectedPiece.col = targetcol;
           this.selectedPiece = null;
           this.resetSquareHighlights();
           this.rotateCameraAroundBoard();
         }
         return;
       }
-      let piece = this.isPiece(clickedObject);
-      if (piece) {
+    
+      let piece = this.getPiece(clickedObject)
+      if (piece !==null && this.chessEngine.availableMoves(piece.row, piece.col).length !== 0) {
         piece.position.y = 0.2;
         this.selectedPiece = piece;
-        this.highlightAllSquares();
+        this.highlightSquares(this.chessEngine.availableMoves(piece.row, piece.col));
         return;
-      }
     }
     if (this.selectedPiece) {
       this.selectedPiece.position.y = 0;
@@ -178,41 +195,24 @@ class MyScene extends THREE.Scene {
       this.resetSquareHighlights();
     }
   }
+}
 
-  highlightAllSquares() {
-    const board = this.getObjectByName("chessBoard");
 
-    board.traverse((child) => {
-      if (child.isMesh && child.name.startsWith("square_")) {
-        // Save original emissive color
-        this.normalMaterials[child.uuid] = child.material.emissive
-          ? child.material.emissive.clone()
-          : new THREE.Color(0x000000);
-
-        if (child.material.emissive) {
-          child.material.emissive.set(0x00ff00);
-          child.material.emissive.set(0x00ff00);
-        }
-      }
-    });
+  highlightSquares(squares) {
+    for (let square of squares) {
+      this.board.squares[square[0]][square[1]].material.emissive.set(0X00ff00);
+    }
   }
 
   resetSquareHighlights() {
-    const board = this.getObjectByName("chessBoard");
-
-    board.traverse((child) => {
-      if (child.isMesh && child.name.startsWith("square_")) {
-        const originalEmissive = this.normalMaterials[child.uuid];
-        if (child.material.emissive && originalEmissive) {
-          child.material.emissive.copy(originalEmissive);
-        }
+   for (let row of this.board.squares) {
+      for (let square of row) {
+        square.material.emissive.set(0x000000);
       }
-    });
-
-    this.normalMaterials = {}; // Clear saved emissives
+    }
   }
 
-  isPiece(object) {
+  getPiece(object) {
     /**
      * Check if the object is a piece
      *
