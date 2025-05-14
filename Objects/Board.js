@@ -1,31 +1,25 @@
 import * as THREE from "../libs/three.module.js";
 
 class Board extends THREE.Object3D {
+  static n_rows = 8;
+  static n_cols = 8;
+  static squareSize = 0.5 / 8;
+  static squareHeight = this.squareSize / 3;
+  static boardHeight = this.squareHeight;
   constructor() {
     super();
+    this.squares = Array.from({ length: Board.n_rows }, () =>
+      Array(Board.n_cols).fill(null)
+    );
 
-    const size = 8;
-    const squareSize = 0.5 / 8;
-    const squareHeight = 0.02;
-    const board = new THREE.Group();
-    this.squares = [
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-    ];
-
-    for (let row = 0; row < size; row++) {
-      for (let col = 0; col < size; col++) {
+    for (let row = 0; row < Board.n_rows; row++) {
+      for (let col = 0; col < Board.n_cols; col++) {
         const geometry = new THREE.BoxGeometry(
-          squareSize,
-          squareHeight,
-          squareSize
+          Board.squareSize,
+          Board.squareHeight,
+          Board.squareSize
         );
+        geometry.translate(0, -Board.squareHeight / 2, 0);
         const material = new THREE.MeshStandardMaterial({
           color: (row + col) % 2 === 0 ? 0xffffff : 0x000000,
         });
@@ -33,20 +27,22 @@ class Board extends THREE.Object3D {
 
         // Posición igual que antes
         square.position.set(
-          col * squareSize - (size / 2) * squareSize + squareSize / 2,
-          -squareHeight / 2,
-          row * squareSize - (size / 2) * squareSize + squareSize / 2
+          col * Board.squareSize -
+            (Board.n_rows / 2) * Board.squareSize +
+            Board.squareSize / 2,
+          0,
+          row * Board.squareSize -
+            (Board.n_cols / 2) * Board.squareSize +
+            Board.squareSize / 2
         );
 
-        const invertedcol = size - 1 - col;
+        const invertedcol = Board.n_cols - 1 - col;
         square.name = `square_${row}_${invertedcol}`;
         square.userData = { row, invertedcol };
-        board.add(square);
-        this.squares[row][7-col] = square;
+        this.add(square);
+        this.squares[row][invertedcol] = square;
       }
     }
-
-    this.add(board);
   }
 }
 

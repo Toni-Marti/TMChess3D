@@ -3,8 +3,8 @@ import * as CSG from "../../libs/three-bvh-csg.js";
 import { AbstractPiece } from "./AbstractPiece.js";
 
 class King extends AbstractPiece {
-  constructor(material_set, row, col) {
-    super(material_set, row, col, 0.4);
+  constructor(material_set, row, col, color) {
+    super(material_set, row, col, color, 0.4);
 
     const evaluator = new CSG.Evaluator();
 

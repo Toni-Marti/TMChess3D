@@ -2,8 +2,8 @@ import * as THREE from "../../libs/three.module.js";
 import { AbstractPiece } from "./AbstractPiece.js";
 
 class Queen extends AbstractPiece {
-  constructor(material_set, row, col) {
-    super(material_set, row, col, 0.39);
+  constructor(material_set, row, col, color) {
+    super(material_set, row, col, color, 0.39);
     var loader = new THREE.TextureLoader();
 
     const shape = new THREE.Shape();

@@ -7,8 +7,8 @@ import { areEqual } from "../../our_libs/utility/utils.js";
 import { AbstractPiece } from "./AbstractPiece.js";
 
 class Knight extends AbstractPiece {
-  constructor(material_set, row, col) {
-    super(material_set, row, col, 0.35);
+  constructor(material_set, row, col, color) {
+    super(material_set, row, col, color, 0.35);
     this.horse = this.createHorse();
     this.add(this.horse);
   }

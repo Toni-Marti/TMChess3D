@@ -29,8 +29,8 @@ class Rook extends AbstractPiece {
     window_width: 0.1,
   };
 
-  constructor(material_set, row, col) {
-    super(material_set, row, col, Rook.base.diameter / 2);
+  constructor(material_set, row, col, color) {
+    super(material_set, row, col, color, Rook.base.diameter / 2);
     this.rng = mulberry32(0);
     this.material_set = material_set;
     this.body_levels = this.createBodyLevels();

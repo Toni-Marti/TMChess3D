@@ -3,8 +3,8 @@ import * as CSG from "../../libs/three-bvh-csg.js";
 import { AbstractPiece } from "./AbstractPiece.js";
 
 class Pawn extends AbstractPiece {
-  constructor(material_set, row, col) {
-    super(material_set, row, col, 0.3);
+  constructor(material_set, row, col, color) {
+    super(material_set, row, col, color, 0.3);
 
     var brazo1Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.7, 16);
     var brazo3Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
