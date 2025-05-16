@@ -4,7 +4,7 @@ import { Base } from "./base.js";
 
 class AbstractPiece extends THREE.Object3D {
   static SPEED = 1500;
-
+  static height_piece = null;
   constructor(material_set, row, col, color, radius = 0.4) {
     super();
     this.material_set = material_set;
@@ -37,6 +37,7 @@ class AbstractPiece extends THREE.Object3D {
       this.position.y =
         starting_pos.y + (to.y - starting_pos.y) * TWEEN.Easing.Quadratic.In(t);
 
+      
       if (t < 1) {
         requestAnimationFrame(animate);
       }
@@ -84,10 +85,6 @@ class AbstractPiece extends THREE.Object3D {
     const my_piece_duration =
       this.position.distanceTo(ending_pos) * AbstractPiece.SPEED;
 
-    console.log(
-      "DESIRED CAPTURE DURATION",
-      Math.max(captured_piece_duration, my_piece_duration)
-    );
     return Math.max(captured_piece_duration, my_piece_duration);
   }
 
