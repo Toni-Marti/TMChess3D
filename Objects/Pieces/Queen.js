@@ -23,8 +23,8 @@ class Queen extends AbstractPiece {
     shape.quadraticCurveTo(0.3, 1.7, 0, 1.75);
 
     const latheGeom = new THREE.LatheGeometry(
-      shape.extractPoints(50).shape,
-      100
+      shape.extractPoints(12).shape,
+      24
     );
     const body = new THREE.Mesh(latheGeom, material_set.piece_body);
 
@@ -37,8 +37,8 @@ class Queen extends AbstractPiece {
     const coronaBaseGeometry = new THREE.TorusGeometry(
       coronaRadius,
       coronaTube,
-      16,
-      100
+      8,
+      24
     );
     const coronaBase = new THREE.Mesh(coronaBaseGeometry, material_set.metal);
     coronaBase.rotation.x = Math.PI / 2;

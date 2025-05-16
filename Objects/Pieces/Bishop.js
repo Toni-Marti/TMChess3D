@@ -2,7 +2,7 @@ import * as THREE from "../../libs/three.module.js";
 import * as CSG from "../../libs/three-bvh-csg.js";
 import { AbstractPiece } from "./AbstractPiece.js";
 
-class Bishop extends AbstractPiece { 
+class Bishop extends AbstractPiece {
   static height_piece = 1.685;
   constructor(material_set, row, col, color) {
     super(material_set, row, col, color, 0.35);
@@ -24,15 +24,15 @@ class Bishop extends AbstractPiece {
     shape.quadraticCurveTo(0.17, 0.93, 0.14, 1.3);
     shape.lineTo(0, 1.3);
 
-    var latheGeom = new THREE.LatheGeometry(shape.extractPoints(50).shape, 100);
+    var latheGeom = new THREE.LatheGeometry(shape.extractPoints(12).shape, 100);
     var body = new CSG.Brush(latheGeom, material_set.piece_body);
     this.add(body);
 
-    var crownBase = new THREE.SphereGeometry(0.17, 32, 64);
+    var crownBase = new THREE.SphereGeometry(0.17, 12, 12);
     crownBase.translate(0, 1.45, 0);
     var crown = new CSG.Brush(crownBase, material_set.piece_body);
 
-    var crossVert = new THREE.SphereGeometry(0.035, 64, 64);
+    var crossVert = new THREE.SphereGeometry(0.035, 8, 8);
     crossVert.translate(0, 1.65, 0);
     var top = new CSG.Brush(crossVert, material_set.piece_body);
 

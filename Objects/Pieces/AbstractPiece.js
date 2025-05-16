@@ -3,7 +3,7 @@ import * as TWEEN from "../../libs/tween.module.js";
 import { Base } from "./base.js";
 
 class AbstractPiece extends THREE.Object3D {
-  static SPEED = 1500;
+  static SPEED = 1 / 900;
   static height_piece = null;
   constructor(material_set, row, col, color, radius = 0.4) {
     super();
@@ -37,7 +37,6 @@ class AbstractPiece extends THREE.Object3D {
       this.position.y =
         starting_pos.y + (to.y - starting_pos.y) * TWEEN.Easing.Quadratic.In(t);
 
-      
       if (t < 1) {
         requestAnimationFrame(animate);
       }
@@ -83,7 +82,7 @@ class AbstractPiece extends THREE.Object3D {
       AbstractPiece.SPEED;
 
     const my_piece_duration =
-      this.position.distanceTo(ending_pos) * AbstractPiece.SPEED;
+      this.position.distanceTo(ending_pos) / AbstractPiece.SPEED;
 
     return Math.max(captured_piece_duration, my_piece_duration);
   }
@@ -96,13 +95,13 @@ class AbstractPiece extends THREE.Object3D {
     );
     const factor = desired_duration / duration;
     const this_duration =
-      this.position.distanceTo(ending_pos) * AbstractPiece.SPEED * factor;
+      (this.position.distanceTo(ending_pos) / AbstractPiece.SPEED) * factor;
     const captured_final_pos = my_scene.getNextLostPiecePosition(
       capturing_piece.color
     );
     const captured_piece_duration =
-      capturing_piece.position.distanceTo(captured_final_pos) *
-      AbstractPiece.SPEED *
+      (capturing_piece.position.distanceTo(captured_final_pos) /
+        AbstractPiece.SPEED) *
       factor;
 
     my_scene.positionPieceAsLost(
@@ -110,7 +109,7 @@ class AbstractPiece extends THREE.Object3D {
       capturing_piece.color,
       captured_piece_duration
     );
-    this.arc_to(ending_pos, this_duration, 0.2);
+    this.descend_to(ending_pos, this_duration);
   }
 }
 
