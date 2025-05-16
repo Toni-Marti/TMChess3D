@@ -494,7 +494,7 @@ class ChessGame {
 
       if (distance > 1 && from[0] === to[0]) {
         let rook_col = to[1] > from[1] ? 7 : 0;
-        let rook_col_dest = rook_col === 0 ? 2 : 5;
+        let rook_col_dest = rook_col === 0 ? 3 : 5;
         this.#board[from[0]][rook_col_dest] = this.getSquare(from[0], rook_col);
         this.#board[from[0]][rook_col] = null;
       }

@@ -24,8 +24,8 @@ class King extends AbstractPiece {
     shape.quadraticCurveTo(0.4, 1.7, 0, 1.8);
 
     const latheGeom = new THREE.LatheGeometry(
-      shape.extractPoints(50).shape,
-      100
+      shape.extractPoints(12).shape,
+      24
     );
     const body = new THREE.Mesh(latheGeom, material_set.piece_body);
 
@@ -38,8 +38,8 @@ class King extends AbstractPiece {
     const coronaBaseGeometry = new THREE.TorusGeometry(
       coronaRadius,
       coronaTube,
-      16,
-      100
+      8,
+      24
     );
     const coronaBase = new THREE.Mesh(
       coronaBaseGeometry,
@@ -70,7 +70,7 @@ class King extends AbstractPiece {
 
     // ------- JEWELS -------
     const jewelRadius = 0.015;
-    const jewelGeometry = new THREE.SphereGeometry(jewelRadius, 16, 16);
+    const jewelGeometry = new THREE.SphereGeometry(jewelRadius, 6, 6);
 
     for (let i = 0; i < spikes.length; i++) {
       const spike = spikes[i];

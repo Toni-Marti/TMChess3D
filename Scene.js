@@ -6,30 +6,39 @@ import { Board } from "./Objects/Board.js";
 import { ChessGame } from "./our_libs/chess/game_handler.js";
 import * as TWEEN from "../../libs/tween.module.js";
 
-const STATE = {
+const STATES = {
   SELECTING_PIECE: 0,
   SELECTED_PIECE: 1,
   PLAYING_ANIMATION: 2,
   FINISHED_GAME: 3,
   BOARD_NOT_SET_UP: 4,
+  PAUSED: 5,
 };
 
 class MyScene extends THREE.Scene {
   constructor(myCanvas) {
     super();
+    this.gameState = STATES.BOARD_NOT_SET_UP;
     this.mouse = new THREE.Vector2();
-    this.raycaster = new THREE.Raycaster();
+    this.ray_caster = new THREE.Raycaster();
     this.renderer = this.createRenderer(myCanvas);
     this.createLights();
+    this.board = new Board();
+    this.add(this.board);
     this.cam_height = 0.6;
     this.cam_radius = 0.55;
+    this.cam_low_pos = new THREE.Vector3(0, this.cam_height, -this.cam_radius);
+    this.cam_high_pos = new THREE.Vector3(0, this.cam_height * 1.5, -0.01);
     this.createCamera();
-    this.currentTurn = "white";
-    this.highlightMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     this.chessEngine = null;
-    this.board = new Board();
-    this.board.name = "chessBoard";
-    this.add(this.board);
+    this.original_dark_material = this.board.squares[0][0].material.clone();
+    this.original_light_material = this.board.squares[0][1].material.clone();
+    this.highlight_dark_material = new THREE.MeshBasicMaterial({
+      color: 0x999933,
+    });
+    this.highlight_light_material = new THREE.MeshBasicMaterial({
+      color: 0xffff66,
+    });
     this.white_pieces = null;
     this.black_pieces = null;
     this.n_white_lost_pieces = 0;
@@ -37,6 +46,8 @@ class MyScene extends THREE.Scene {
     this.createPieces();
     this.positionAllPiecesAsLost();
     this.setUpGame(500);
+    this.selectedHeight = 0.2;
+    this.camera_high = false;
   }
 
   getNextLostPiecePosition(color) {
@@ -136,17 +147,14 @@ class MyScene extends THREE.Scene {
         }
       }
     }
-    console.log(
-      "DESIRED SET UP DURATION: ",
-      max_distance * AbstractPiece.SPEED
-    );
-    return max_distance * AbstractPiece.SPEED;
+    return max_distance / AbstractPiece.SPEED;
   }
 
   async setUpGame(wait_time = 0) {
     await new Promise((resolve) => setTimeout(resolve, wait_time));
 
     this.chessEngine = new ChessGame();
+    const set_up_duration = this.gameSetUpDesiredDuration();
     for (let color of ["white", "black"]) {
       let pieces = color === "white" ? this.white_pieces : this.black_pieces;
       for (const [piece_name, piece] of Object.entries(pieces)) {
@@ -173,20 +181,22 @@ class MyScene extends THREE.Scene {
         this.board.squares[piece.row][piece.col].getWorldPosition(targetPos);
         piece.arc_to(
           targetPos,
-          (this.gameSetUpDesiredDuration() * distance) / max_distance,
+          (set_up_duration * distance) / max_distance,
           0.2
         );
       }
     }
     this.n_black_lost_pieces = 0;
     this.n_white_lost_pieces = 0;
+    await new Promise((resolve) => setTimeout(resolve, set_up_duration));
+    this.gameState = STATES.SELECTING_PIECE;
   }
 
   rotateCameraAroundBoard(duration) {
-    const center = new THREE.Vector3(0, 0, 0);
-
-    const startAngle = this.currentTurn === "white" ? Math.PI : 0;
-    const endAngle = this.currentTurn === "white" ? 0 : -Math.PI;
+    const startAngle =
+      this.chessEngine.currentPlayer() === "white" ? Math.PI : 0;
+    const endAngle =
+      this.chessEngine.currentPlayer() === "white" ? 0 : -Math.PI;
 
     const startTime = performance.now();
 
@@ -196,37 +206,33 @@ class MyScene extends THREE.Scene {
       const angle =
         startAngle + (endAngle - startAngle) * TWEEN.Easing.Quadratic.InOut(t);
 
-      const x = this.cam_radius * Math.sin(angle);
-      const z = this.cam_radius * Math.cos(angle);
-      this.camera.position.set(x, this.cam_height, z);
-
-      // Ahora, sin controles, sólo usamos lookAt para enfocar el centro
-      this.camera.lookAt(center);
+      this.camera_parent.rotation.y = angle;
 
       if (t < 1) {
         requestAnimationFrame(animate);
       }
     };
 
-    // Alternar turno antes de iniciar animación
-    this.currentTurn = this.currentTurn === "white" ? "black" : "white";
-
     requestAnimationFrame(animate);
   }
 
-
-
   createCamera() {
+    this.camera_parent = new THREE.Object3D();
+    this.add(this.camera_parent);
     this.camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
       0.01,
       1000
     );
-    this.camera.position.set(0, this.cam_height, -this.cam_radius);
+    this.camera.position.set(
+      this.cam_low_pos.x,
+      this.cam_low_pos.y,
+      this.cam_low_pos.z
+    );
     var look = new THREE.Vector3(0, 0, 0);
-    this.camera.lookAt(look);
-    this.add(this.camera);
+    this.camera.lookAt(this.board.position);
+    this.camera_parent.add(this.camera);
   }
 
   createPieces() {
@@ -316,9 +322,87 @@ class MyScene extends THREE.Scene {
     changing.p8 = pieces[15];
   }
 
+  updateMouseCursor() {
+    let intersects;
+    let piece;
+    switch (this.gameState) {
+      case STATES.BOARD_NOT_SET_UP:
+      case STATES.FINISHED_GAME:
+      case STATES.PLAYING_ANIMATION:
+        break;
+      case STATES.SELECTING_PIECE:
+        this.ray_caster.setFromCamera(this.mouse, this.camera);
+        intersects = this.ray_caster.intersectObjects(this.children);
+        if (intersects.length === 0) break;
+        piece = this.getPiece(intersects[0].object);
+        if (piece === null) break;
+        if (this.chessEngine.availableMoves(piece.row, piece.col).length === 0)
+          break;
+        document.body.style.cursor = "pointer";
+        return;
+
+      case STATES.SELECTED_PIECE:
+        this.ray_caster.setFromCamera(this.mouse, this.camera);
+        intersects = this.ray_caster.intersectObjects(this.children);
+        if (intersects.length === 0) break;
+        piece = this.getPiece(intersects[0].object);
+        if (piece === null) {
+          const click_object = intersects[0].object;
+          if (click_object.name.startsWith("square_")) {
+            const square = click_object;
+            const square_row = Number(square.name[square.name.length - 3]);
+            const square_col = Number(square.name[square.name.length - 1]);
+            let can_move_there = false;
+            for (let move of this.chessEngine.availableMoves(
+              this.selectedPiece.row,
+              this.selectedPiece.col
+            )) {
+              if (move[0] === square_row && move[1] === square_col) {
+                can_move_there = true;
+                break;
+              }
+            }
+            if (can_move_there) {
+              document.body.style.cursor = "pointer";
+              return;
+            }
+          }
+          break;
+        }
+        if (piece.color !== this.selectedPiece.color) {
+          let can_capture = false;
+          for (let move of this.chessEngine.availableMoves(
+            this.selectedPiece.row,
+            this.selectedPiece.col
+          )) {
+            if (move[0] === piece.row && move[1] === piece.col) {
+              can_capture = true;
+              break;
+            }
+          }
+
+          if (can_capture) {
+            document.body.style.cursor = "pointer";
+            return;
+          }
+        } else {
+          if (
+            piece !== this.selectedPiece &&
+            this.chessEngine.availableMoves(piece.row, piece.col).length > 0
+          ) {
+            document.body.style.cursor = "pointer";
+            return;
+          }
+        }
+    }
+
+    document.body.style.cursor = "default";
+  }
+
   onMouseMove(event) {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.updateMouseCursor();
   }
 
   createLights() {
@@ -345,28 +429,15 @@ class MyScene extends THREE.Scene {
     return renderer;
   }
 
-  async tryToMove(piece, square) {
-    const targetrow = Number(square.name[square.name.length - 3]);
-    const targetcol = Number(square.name[square.name.length - 1]);
-    let isvalidmove = false;
-    for (let move of this.chessEngine.availableMoves(
-      this.selectedPiece.row,
-      this.selectedPiece.col
-    )) {
-      if (move[0] === targetrow && move[1] === targetcol) {
-        isvalidmove = true;
-        break;
-      }
-    }
-    if (!isvalidmove) {
-      return;
-    }
+  async move(piece, square) {
+    const target_row = Number(square.name[square.name.length - 3]);
+    const target_col = Number(square.name[square.name.length - 1]);
 
     const pieces_before = this.chessEngine.getNumberOfPiecesInBoard();
     const board_before = this.chessEngine.getBoardCopy();
     this.chessEngine.applyMove(
       [this.selectedPiece.row, this.selectedPiece.col],
-      [targetrow, targetcol]
+      [target_row, target_col]
     );
     const pieces_after = this.chessEngine.getNumberOfPiecesInBoard();
     const target_pos = new THREE.Vector3();
@@ -377,9 +448,9 @@ class MyScene extends THREE.Scene {
     if (pieces_after < pieces_before) {
       const pawn_dir = piece.color === "white" ? 1 : -1;
       let captured_square =
-        board_before[targetrow][targetcol] !== null
-          ? [targetrow, targetcol]
-          : [targetrow - pawn_dir, targetcol];
+        board_before[target_row][target_col] !== null
+          ? [target_row, target_col]
+          : [target_row - pawn_dir, target_col];
       let captured_piece = null;
       const all_posible_captures =
         piece.color === "white" ? this.black_pieces : this.white_pieces;
@@ -416,65 +487,299 @@ class MyScene extends THREE.Scene {
         this
       );
     } else {
-      move_duration = distance * AbstractPiece.SPEED;
+      const moving_king =
+        board_before[this.selectedPiece.row][
+          this.selectedPiece.col
+        ].toUpperCase() === "K";
+      const castling =
+        moving_king && Math.abs(target_col - this.selectedPiece.col) > 1;
+      move_duration = distance / AbstractPiece.SPEED;
       this.selectedPiece.move(target_pos, move_duration);
+      if (castling) {
+        const pieces =
+          piece.color === "white" ? this.white_pieces : this.black_pieces;
+        const dir = target_col === 2 ? -1 : 1;
+        const rook_col = target_col === 2 ? 0 : 7;
+        const rook = rook_col === 0 ? pieces.r1 : pieces.r2;
+        const rook_destination =
+          this.board.squares[this.selectedPiece.row][
+            this.selectedPiece.col + dir
+          ].position;
+        const rook_move_duration =
+          rook.position.distanceTo(rook_destination) / AbstractPiece.SPEED;
+        await new Promise((resolve) => setTimeout(resolve, move_duration));
+        move_duration += rook_move_duration;
+        rook.col = this.selectedPiece.col + dir;
+        rook.arc_to(rook_destination, rook_move_duration, 0.2);
+      }
     }
-    this.selectedPiece.row = targetrow;
-    this.selectedPiece.col = targetcol;
-    this.selectedPiece = null;
+    this.selectedPiece.row = target_row;
+    this.selectedPiece.col = target_col;
     this.resetSquareHighlights();
 
     await new Promise((resolve) => setTimeout(resolve, move_duration));
-    this.rotateCameraAroundBoard(1000);
+    let cam_rotation_duration = 670;
+    this.rotateCameraAroundBoard(cam_rotation_duration);
+    await new Promise((resolve) => setTimeout(resolve, cam_rotation_duration));
+    this.selectedPiece = null;
+    return;
   }
 
-  onClick() {
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(this.children);
+  async onClick() {
+    let animate_y = async (piece, to_y, duration) => {
+      const startTime = performance.now();
+      const starting_y = piece.position.y;
+      let animator = {};
+      animator.promise = new Promise((resolve, reject) => {
+        animator.resolve = resolve;
+      });
 
-    // Original code continues...
-    if (intersects.length > 0) {
-      const clickedObject = intersects[0].object;
-      if (this.selectedPiece) {
-        if (clickedObject.name.startsWith("square_")) {
-          this.tryToMove(this.selectedPiece, clickedObject);
-          return;
+      const animate = (time) => {
+        console.log();
+        const elapsed = time - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        piece.position.y =
+          (to_y - starting_y) * TWEEN.Easing.Quadratic.Out(t) + starting_y;
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          animator.resolve();
         }
-        return;
-      }
+      };
+      requestAnimationFrame(animate);
+      await animator.promise;
+    };
 
-      let piece = this.getPiece(clickedObject);
-      if (
-        piece !== null &&
-        this.chessEngine.availableMoves(piece.row, piece.col).length !== 0
-      ) {
-        piece.position.y = 0.2;
-        this.selectedPiece = piece;
+    let release_selected_piece = async () => {
+      this.gameState = STATES.PLAYING_ANIMATION;
+      await animate_y(
+        this.selectedPiece,
+        this.selectedPiece.position.y - this.selectedHeight,
+        75
+      );
+
+      this.selectedPiece = null;
+      this.gameState = STATES.SELECTING_PIECE;
+    };
+    const select_piece = async (piece) => {
+      if (this.selectedPiece) {
+        this.resetSquareHighlights();
         this.highlightSquares(
           this.chessEngine.availableMoves(piece.row, piece.col)
         );
-        return;
+        await release_selected_piece();
+      } else {
+        this.highlightSquares(
+          this.chessEngine.availableMoves(piece.row, piece.col)
+        );
       }
-      if (this.selectedPiece) {
-        this.selectedPiece.position.y = 0;
+      await animate_y(piece, piece.position.y + this.selectedHeight, 75);
+      this.selectedPiece = piece;
+      this.gameState = STATES.SELECTED_PIECE;
+    };
+
+    let intersects;
+    switch (this.gameState) {
+      case STATES.BOARD_NOT_SET_UP:
+      case STATES.FINISHED_GAME:
+      case STATES.PLAYING_ANIMATION:
+        break;
+      case STATES.SELECTING_PIECE:
+        this.ray_caster.setFromCamera(this.mouse, this.camera);
+        intersects = this.ray_caster.intersectObjects(this.children);
+        if (intersects.length === 0) break;
+
+        let piece = this.getPiece(intersects[0].object);
+        if (piece === null) {
+          break;
+        }
+
+        if (this.chessEngine.availableMoves(piece.row, piece.col).length === 0)
+          break;
+
+        select_piece(piece);
+        break;
+
+      case STATES.SELECTED_PIECE:
+        this.ray_caster.setFromCamera(this.mouse, this.camera);
+        intersects = this.ray_caster.intersectObjects(this.children);
+
+        if (intersects.length === 0) {
+          this.resetSquareHighlights();
+          release_selected_piece();
+          break;
+        }
+        const clicked_piece = this.getPiece(intersects[0].object);
+        if (clicked_piece !== null) {
+          if (clicked_piece.color !== this.selectedPiece.color) {
+            let can_capture = false;
+            for (let move of this.chessEngine.availableMoves(
+              this.selectedPiece.row,
+              this.selectedPiece.col
+            )) {
+              if (
+                move[0] === clicked_piece.row &&
+                move[1] === clicked_piece.col
+              ) {
+                can_capture = true;
+                break;
+              }
+            }
+
+            if (can_capture) {
+              this.gameState = STATES.PLAYING_ANIMATION;
+              await this.move(
+                this.selectedPiece,
+                this.board.squares[clicked_piece.row][clicked_piece.col]
+              );
+              this.gameState = STATES.SELECTING_PIECE;
+              this.selectedPiece = null;
+              break;
+            }
+          } else if (clicked_piece !== this.selectedPiece) {
+            if (
+              this.chessEngine.availableMoves(
+                clicked_piece.row,
+                clicked_piece.col
+              ).length > 0
+            ) {
+              await select_piece(clicked_piece);
+            }
+            break;
+          } else {
+            break;
+          }
+        }
+
+        let square = null;
+        for (let intersect of intersects) {
+          if (intersect.object.name.startsWith("square_")) {
+            square = intersect.object;
+            break;
+          }
+        }
+
+        if (square === null) {
+          this.resetSquareHighlights();
+          release_selected_piece();
+          break;
+        }
+
+        let square_row = Number(square.name[square.name.length - 3]);
+        let square_col = Number(square.name[square.name.length - 1]);
+        let can_move_to_square = false;
+        for (let move of this.chessEngine.availableMoves(
+          this.selectedPiece.row,
+          this.selectedPiece.col
+        )) {
+          if (move[0] === square_row && move[1] === square_col) {
+            can_move_to_square = true;
+            break;
+          }
+        }
+
+        if (!can_move_to_square) {
+          this.resetSquareHighlights();
+          release_selected_piece();
+          break;
+        }
+
+        this.gameState = STATES.PLAYING_ANIMATION;
+        await this.move(this.selectedPiece, square);
+
         this.selectedPiece = null;
-        this.resetSquareHighlights();
-      }
+        this.gameState = STATES.SELECTING_PIECE;
+
+        break;
+    }
+
+    this.updateMouseCursor();
+  }
+
+  async onKeyDown(event) {
+    switch (event.key) {
+      case "c":
+        if (this.cameraAnimating) {
+          if (this.cameraAnimationCancel) {
+            this.cameraAnimationCancel();
+          }
+        }
+
+        this.camera_high = !this.camera_high;
+
+        const startPos = this.camera.position.clone();
+        const targetPos = this.camera_high
+          ? this.cam_high_pos
+          : this.cam_low_pos;
+
+        const duration = 300;
+        const startTime = performance.now();
+
+        this.cameraAnimating = true;
+        let cancelled = false;
+
+        this.cameraAnimationCancel = () => {
+          cancelled = true;
+          this.cameraAnimating = false;
+          this.cameraAnimationCancel = null;
+        };
+
+        return new Promise((resolve) => {
+          const animate = (time) => {
+            if (cancelled) {
+              resolve();
+              return;
+            }
+
+            const elapsed = time - startTime;
+            const t = Math.min(elapsed / duration, 1);
+            const easing = TWEEN.Easing.Quadratic.InOut(t);
+
+            this.camera.position.set(
+              startPos.x + (targetPos.x - startPos.x) * easing,
+              startPos.y + (targetPos.y - startPos.y) * easing,
+              startPos.z + (targetPos.z - startPos.z) * easing
+            );
+
+            this.camera.lookAt(0, 0, 0);
+
+            if (t < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              this.cameraAnimating = false;
+              this.cameraAnimationCancel = null;
+              resolve();
+            }
+          };
+
+          requestAnimationFrame(animate);
+        });
     }
   }
 
-
-
-  highlightSquares(squares) {
-    for (let square of squares) {
-      this.board.squares[square[0]][square[1]].material.emissive.set(0x00ff00);
+  highlightSquares(squares_cords) {
+    for (let square_cord of squares_cords) {
+      const square = this.board.squares[square_cord[0]][square_cord[1]];
+      const row = Number(square.name[square.name.length - 3]);
+      const col = Number(square.name[square.name.length - 1]);
+      square.material =
+        (row + col) % 2 === 0
+          ? this.highlight_dark_material
+          : this.highlight_light_material;
     }
   }
 
   resetSquareHighlights() {
     for (let row of this.board.squares) {
       for (let square of row) {
-        square.material.emissive.set(0x000000);
+        const row = Number(square.name[square.name.length - 3]);
+        const col = Number(square.name[square.name.length - 1]);
+        square.material =
+          (row + col) % 2 === 0
+            ? this.original_dark_material
+            : this.original_light_material;
+        square.material.needsUpdate = true;
       }
     }
   }
@@ -519,7 +824,8 @@ class MyScene extends THREE.Scene {
 $(function () {
   var scene = new MyScene("#WebGL-output");
   window.addEventListener("resize", () => scene.onWindowResize());
-  window.addEventListener("click", (event) => scene.onClick());
+  window.addEventListener("click", () => scene.onClick());
   window.addEventListener("mousemove", (event) => scene.onMouseMove(event));
+  window.addEventListener("keydown", (event) => scene.onKeyDown(event));
   scene.update();
 });
