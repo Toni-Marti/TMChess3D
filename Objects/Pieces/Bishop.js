@@ -2,14 +2,15 @@ import * as THREE from "../../libs/three.module.js";
 import * as CSG from "../../libs/three-bvh-csg.js";
 import { AbstractPiece } from "./AbstractPiece.js";
 
-class Bishop extends AbstractPiece {
+class Bishop extends AbstractPiece { 
+  static height_piece = 1.685;
   constructor(material_set, row, col, color) {
     super(material_set, row, col, color, 0.35);
 
     const evaluator = new CSG.Evaluator();
 
     // ----- Diagonal cut -----
-    var cut = new THREE.BoxGeometry(0.02, 0.7, color, 0.45);
+    var cut = new THREE.BoxGeometry(0.02, 0.7, 0.45);
     cut.rotateZ(Math.PI / 4);
     cut.translate(-0.16, 1.6, 0);
     var cutcut = new CSG.Brush(cut, material_set.piece_body);

@@ -214,6 +214,8 @@ class MyScene extends THREE.Scene {
     requestAnimationFrame(animate);
   }
 
+
+
   createCamera() {
     this.camera = new THREE.PerspectiveCamera(
       45,
@@ -438,6 +440,7 @@ class MyScene extends THREE.Scene {
           this.tryToMove(this.selectedPiece, clickedObject);
           return;
         }
+        return;
       }
 
       let piece = this.getPiece(clickedObject);
@@ -459,6 +462,8 @@ class MyScene extends THREE.Scene {
       }
     }
   }
+
+
 
   highlightSquares(squares) {
     for (let square of squares) {
@@ -505,6 +510,7 @@ class MyScene extends THREE.Scene {
   }
 
   update() {
+    TWEEN.update();
     this.renderer.render(this, this.getCamera());
     requestAnimationFrame(() => this.update());
   }
