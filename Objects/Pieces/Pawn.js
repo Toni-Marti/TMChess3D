@@ -7,7 +7,8 @@ class Pawn extends AbstractPiece {
   constructor(material_set, row, col, color) {
     super(material_set, row, col, color, 0.3);
     this.pivot = new THREE.Object3D(); // Punto de giro (bisectriz)
-    this.upperGroup = new THREE.Object3D(); // Grupo que se doblará
+    this.upperGroup = new THREE.Object3D(); // Grupo que se doblará arriba
+    this.lowerGroup = new THREE.Object3D();
 
     var brazo1Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.7, 10);
     var brazo3Geom = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 10);
@@ -75,28 +76,42 @@ class Pawn extends AbstractPiece {
       CSG.SUBTRACTION
     );
 
-    this.upperGroup.add(brazo4, brazo5, brazo6, cascoConHueco);
-    this.pivot.position.set(0, 0.04, 0);
-    this.pivot.add(this.upperGroup);
+    const scale_factor = 0.5 / 8;
+   this.lowerGroup.add(brazo1, brazo2);
+  this.upperGroup.add(brazo3, brazo4, brazo5, brazo6, cascoConHueco);
 
-    this.add(brazo1);
-    this.add(brazo2);
-    this.add(brazo3);
-    this.add(this.pivot);
+ 
+  this.pivot.position.y = brazo3.position.y *scale_factor ;
+
+  this.pivot.add(this.lowerGroup);
+  this.pivot.add(this.upperGroup);
+
+  this.add(this.pivot);
   }
 
   update() {}
 
-  bendTop(angle = Math.PI / 8, duration = 500) {
-    new TWEEN.Tween(this.pivot.rotation)
-      .to({ x: angle }, duration)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-      .start();
+
+  bendTop(duration = 250, scaleY = 0.7) {
+  new TWEEN.Tween(this.upperGroup.scale)
+    .to({ y: scaleY }, duration)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .start();
+    
+  new TWEEN.Tween(this.lowerGroup.scale)
+    .to({ y: scaleY }, duration)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .start();
   }
 
-  unbendTop(duration = 500) {
-    new TWEEN.Tween(this.pivot.rotation)
-      .to({ x: 0 }, duration)
+  unbendTop(duration = 250) {
+    new TWEEN.Tween(this.upperGroup.scale)
+      .to({ y: 1 }, duration)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .start();
+      
+    new TWEEN.Tween(this.lowerGroup.scale)
+      .to({ y: 1 }, duration)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .start();
   }
@@ -106,8 +121,7 @@ class Pawn extends AbstractPiece {
     captured,
     bounceCount = 3,
     squashStep = 0.33,
-    squashDuration = 600,
-    onComplete = null
+    squashDuration = 500
   ) {
     let currentBounce = 0;
     let bounceHeight = 0.1;
@@ -126,11 +140,10 @@ class Pawn extends AbstractPiece {
           .start();
 
         new TWEEN.Tween(captured.scale)
-          .to({ y: 0 }, squashDuration)
+          .to({ y: 0.01 }, squashDuration/2)
           .easing(TWEEN.Easing.Cubic.InOut)
           .onComplete(() => {
             if (piece.unbendTop) piece.unbendTop();
-            if (onComplete) onComplete();
           })
           .start();
 
@@ -173,50 +186,44 @@ class Pawn extends AbstractPiece {
     doBounce();
   }
 
-  capture(captured_piece, all_other_pieces, ending_pos, duration, my_scene) {
-    const desired_duration = this.getDesiredCaptureDuration(
-      captured_piece,
-      ending_pos,
-      my_scene
-    );
+  getDesiredCaptureDuration(captured_piece, ending_pos, my_scene) {
+    const orig_duration = super.getDesiredCaptureDuration(captured_piece, ending_pos, my_scene);
+    const bounces = 2000;
+    const movement = 500;
 
-    const factor = desired_duration / duration;
-    const captured_final_pos = my_scene.getNextLostPiecePosition(
-      captured_piece.color
-    );
-
-    new TWEEN.Tween(this.position)
-      .to({ x: captured_piece.position.x, z: captured_piece.position.z }, 500)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-      .onComplete(() => {
-        this.squashBouncesOverCaptured(
-          this,
-          captured_piece,
-          3,
-          0.33,
-          1000,
-          () => {
-            new TWEEN.Tween(this.position)
-              .to({ x: ending_pos.x, z: ending_pos.z }, 500)
-              .easing(TWEEN.Easing.Quadratic.InOut)
-              .onComplete(() => {
-                const captured_piece_duration =
-                  (this.position.distanceTo(captured_final_pos) /
-                    AbstractPiece.SPEED) *
-                  factor;
-
-                my_scene.positionPieceAsLost(
-                  captured_piece,
-                  captured_piece.color,
-                  captured_piece_duration
-                );
-              })
-              .start();
-          }
-        );
-      })
-      .start();
+    return orig_duration + bounces + movement;
   }
+
+
+  async capture(captured_piece, all_other_pieces, ending_pos, duration, my_scene) {
+  const desired_dur = this.getDesiredCaptureDuration(
+    captured_piece,
+    ending_pos,
+    my_scene
+  );
+  const dur_factor = duration / desired_dur;
+  const orig_duration = super.getDesiredCaptureDuration(captured_piece, ending_pos, my_scene) * dur_factor;
+  const bounces_duration = 2000 * dur_factor;
+  const movement_duration  = 500 * dur_factor;
+
+  new TWEEN.Tween(this.position)
+    .to({ x: captured_piece.position.x, z: captured_piece.position.z }, movement_duration)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .onComplete(() => {
+      this.squashBouncesOverCaptured(
+        this,
+        captured_piece,
+        3,
+        0.33,
+        bounces_duration/3
+      );
+    })
+    .start();
+
+    await new Promise((resolve) => setTimeout(resolve, movement_duration + bounces_duration));
+    await super.capture(captured_piece, all_other_pieces, ending_pos, duration, my_scene);
+}
+
 }
 
 export { Pawn };

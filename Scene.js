@@ -5,6 +5,8 @@ import * as PiceMaterialSets from "./Objects/Pieces/Materials/MaterialSetLibrary
 import { Board } from "./Objects/Board.js";
 import { ChessGame } from "./our_libs/chess/game_handler.js";
 import * as TWEEN from "../../libs/tween.module.js";
+import { MTLLoader } from "../libs/MTLLoader.js"
+import { OBJLoader } from "../libs/OBJLoader.js"
 
 const STATES = {
   SELECTING_PIECE: 0,
@@ -18,6 +20,40 @@ const STATES = {
 class MyScene extends THREE.Scene {
   constructor(myCanvas) {
     super();
+
+    var objectLoader = new OBJLoader();
+
+    objectLoader.load("Models/woodenstool.obj", (object) => {
+      const textureLoader = new THREE.TextureLoader();
+
+      const maderaTexture = textureLoader.load('Models/color_wooden.jpg');
+      const normalTexture = textureLoader.load('Models/normal_wooden.jpg');
+      const roughnessTexture = textureLoader.load('Models/Roughness.jpg');
+
+      object.traverse((child) => {
+        if (child.isMesh) {
+          child.material = new THREE.MeshStandardMaterial({
+            map: maderaTexture,
+            normalMap: normalTexture,
+            roughnessMap: roughnessTexture,
+            bumpScale: 0.05,
+          });
+          child.material.needsUpdate = true;
+        }
+      });
+
+      object.scale.set(0.5, 0.2, 0.5);
+      object.position.set(0, -0.8, 0);
+
+      this.add(object);
+
+
+     
+    });
+
+
+
+
     this.gameState = STATES.BOARD_NOT_SET_UP;
     this.mouse = new THREE.Vector2();
     this.ray_caster = new THREE.Raycaster();
@@ -45,7 +81,7 @@ class MyScene extends THREE.Scene {
     this.n_black_lost_pieces = 0;
     this.createPieces();
     this.positionAllPiecesAsLost();
-    this.setUpGame(500);
+    this.setUpGame(750);
     this.selectedHeight = 0.2;
     this.camera_high = false;
   }
@@ -405,6 +441,20 @@ class MyScene extends THREE.Scene {
     this.updateMouseCursor();
   }
 
+  flashLightsGreen(duration = 450) {
+    const originalColor = new THREE.Color(0xffffff);
+    const greenColor = new THREE.Color(0x00ff00);
+
+    this.pointLight1.color.set(greenColor);
+    this.pointLight2.color.set(greenColor);
+
+    setTimeout(() => {
+      this.ambientLight.color.set(originalColor);
+      this.pointLight1.color.set(originalColor);
+      this.pointLight2.color.set(originalColor);
+    }, duration);
+  }
+
   createLights() {
     this.ambientLight = new THREE.AmbientLight("white", 0.5);
     this.add(this.ambientLight);
@@ -479,13 +529,15 @@ class MyScene extends THREE.Scene {
           all_other_pieces.push(piece);
         }
       }
-      piece.capture(
+      console.log(move_duration)
+      await piece.capture(
         captured_piece,
         all_other_pieces,
         target_pos,
         move_duration,
         this
       );
+      this.flashLightsGreen();
     } else {
       const moving_king =
         board_before[this.selectedPiece.row][
@@ -494,7 +546,7 @@ class MyScene extends THREE.Scene {
       const castling =
         moving_king && Math.abs(target_col - this.selectedPiece.col) > 1;
       move_duration = distance / AbstractPiece.SPEED;
-      this.selectedPiece.move(target_pos, move_duration);
+      await this.selectedPiece.move(target_pos, move_duration);
       if (castling) {
         const pieces =
           piece.color === "white" ? this.white_pieces : this.black_pieces;
@@ -507,17 +559,14 @@ class MyScene extends THREE.Scene {
           ].position;
         const rook_move_duration =
           rook.position.distanceTo(rook_destination) / AbstractPiece.SPEED;
-        await new Promise((resolve) => setTimeout(resolve, move_duration));
         move_duration += rook_move_duration;
         rook.col = this.selectedPiece.col + dir;
-        rook.arc_to(rook_destination, rook_move_duration, 0.2);
+        await rook.arc_to(rook_destination, rook_move_duration, 0.2);
       }
     }
     this.selectedPiece.row = target_row;
     this.selectedPiece.col = target_col;
     this.resetSquareHighlights();
-
-    await new Promise((resolve) => setTimeout(resolve, move_duration));
     let cam_rotation_duration = 670;
     this.rotateCameraAroundBoard(cam_rotation_duration);
     await new Promise((resolve) => setTimeout(resolve, cam_rotation_duration));
