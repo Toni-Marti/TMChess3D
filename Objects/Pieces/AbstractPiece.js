@@ -16,7 +16,7 @@ class AbstractPiece extends THREE.Object3D {
 
   update() {}
 
-  descend_to(to, duration) {
+  async descend_to(to, duration) {
     /**
      * Named like this because it was thought to be used for moving a piece
      * downwards, doesn't force it.
@@ -43,9 +43,11 @@ class AbstractPiece extends THREE.Object3D {
     };
 
     requestAnimationFrame(animate);
+
+    await new Promise((resolve) => setTimeout(resolve, duration));
   }
 
-  arc_to(to, duration, height) {
+  async arc_to(to, duration, height) {
     const starting_pos = this.position.clone();
 
     const startTime = performance.now();
@@ -67,10 +69,12 @@ class AbstractPiece extends THREE.Object3D {
     };
 
     requestAnimationFrame(animate);
+
+    await new Promise((resolve) => setTimeout(resolve, duration));
   }
 
-  move(to, duration) {
-    this.descend_to(to, duration);
+  async move(to, duration) {
+    await this.descend_to(to, duration);
   }
 
   getDesiredCaptureDuration(captured_piece, ending_pos, my_scene) {
@@ -78,7 +82,7 @@ class AbstractPiece extends THREE.Object3D {
     const captured_final_pos =
       my_scene.getNextLostPiecePosition(captured_color);
     const captured_piece_duration =
-      captured_piece.position.distanceTo(captured_final_pos) *
+      captured_piece.position.distanceTo(captured_final_pos) /
       AbstractPiece.SPEED;
 
     const my_piece_duration =
@@ -87,13 +91,13 @@ class AbstractPiece extends THREE.Object3D {
     return Math.max(captured_piece_duration, my_piece_duration);
   }
 
-  capture(capturing_piece, all_other_pieces, ending_pos, duration, my_scene) {
+  async capture(capturing_piece, all_other_pieces, ending_pos, duration, my_scene) {
     const desired_duration = this.getDesiredCaptureDuration(
       capturing_piece,
       ending_pos,
       my_scene
     );
-    const factor = desired_duration / duration;
+    const factor = duration / desired_duration;
     const this_duration =
       (this.position.distanceTo(ending_pos) / AbstractPiece.SPEED) * factor;
     const captured_final_pos = my_scene.getNextLostPiecePosition(
@@ -101,8 +105,7 @@ class AbstractPiece extends THREE.Object3D {
     );
     const captured_piece_duration =
       (capturing_piece.position.distanceTo(captured_final_pos) /
-        AbstractPiece.SPEED) *
-      factor;
+        AbstractPiece.SPEED)* factor;
 
     my_scene.positionPieceAsLost(
       capturing_piece,
@@ -110,6 +113,9 @@ class AbstractPiece extends THREE.Object3D {
       captured_piece_duration
     );
     this.descend_to(ending_pos, this_duration);
+
+    
+    await new Promise((resolve) => setTimeout(resolve, Math.max(this_duration, captured_piece_duration)));
   }
 }
 
