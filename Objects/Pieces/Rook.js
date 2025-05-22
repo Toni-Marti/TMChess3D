@@ -4,6 +4,7 @@ import * as GEOMETRY_SHAPES from "../../our_libs/geometry/shapes.js";
 import Point from "../../our_libs/geometry/point.js";
 import { mulberry32 } from "../../our_libs/utility/utils.js";
 import { AbstractPiece } from "./AbstractPiece.js";
+import * as TWEEN from "../../libs/tween.module.js";
 
 class Rook extends AbstractPiece {
   static base = { height: 0.25, diameter: 0.7 };
@@ -28,15 +29,25 @@ class Rook extends AbstractPiece {
     inner_radius: 0.18,
     window_width: 0.1,
   };
+  static durations = {
+    raise: 500,
+    pause: 200,
+    descend1: 1000,
+    expansoion: 1500,
+    descend2: 700,
+    squash: 200,
+  };
 
   constructor(material_set, row, col, color) {
-    super(material_set, row, col, color, Rook.base.diameter / 2);
+    super(material_set, row, col, color, 1.3, Rook.base.diameter / 2);
     this.rng = mulberry32(0);
     this.material_set = material_set;
     this.body_levels = this.createBodyLevels();
+    this.tower_body = new THREE.Object3D();
     this.body_levels.forEach((level) =>
-      level.forEach((block) => this.add(block))
+      level.forEach((block) => this.tower_body.add(block))
     );
+    this.add(this.tower_body);
     this.top = this.createTop();
     this.add(this.top);
   }
@@ -270,6 +281,184 @@ class Rook extends AbstractPiece {
     );
 
     return top;
+  }
+
+  getDesiredCaptureDuration(captured_piece, ending_pos, my_scene) {
+    const go_to_piece_duration =
+      (3 * this.position.distanceTo(captured_piece.position)) /
+      AbstractPiece.SPEED;
+
+    return (
+      Rook.durations.raise +
+      5 * Rook.durations.pause +
+      go_to_piece_duration +
+      Rook.durations.squash +
+      Rook.durations.expansoion +
+      Rook.durations.descend2
+    );
+  }
+
+  async capture(
+    capturing_piece,
+    all_other_pieces,
+    ending_pos,
+    duration,
+    my_scene
+  ) {
+    const duration_factor =
+      duration /
+      this.getDesiredCaptureDuration(capturing_piece, ending_pos, my_scene);
+
+    const raise_duration = Rook.durations.raise * duration_factor;
+    const pause = Rook.durations.pause * duration_factor;
+    const go_to_piece =
+      (duration_factor *
+        (3 * this.position.distanceTo(capturing_piece.position))) /
+      AbstractPiece.SPEED;
+    const descend1_duration = Rook.durations.descend1 * duration_factor;
+    const descend2_duration = Rook.durations.descend2 * duration_factor;
+    const expandin_duration = Rook.durations.expansoion;
+    const squash_duration = Rook.durations.squash * duration_factor;
+
+    let piece_scale = new THREE.Vector3();
+    this.getWorldScale(piece_scale);
+
+    this.tower_body.position.y = my_scene.selectedHeight / piece_scale.y;
+    this.top.position.y = my_scene.selectedHeight / piece_scale.y;
+    this.base.position.y = my_scene.selectedHeight / piece_scale.y;
+    this.position.y = this.position.y - my_scene.selectedHeight;
+
+    let initial_world_pos = new THREE.Vector3();
+    this.base.getWorldPosition(initial_world_pos);
+    const diference_to_target = capturing_piece.position
+      .clone()
+      .sub(initial_world_pos);
+    let target_base_pos = this.position.clone().add(diference_to_target);
+    let catured_piece_y_dest = capturing_piece.position.y + 0.06;
+
+    new TWEEN.Tween([this.base.position, capturing_piece.position])
+      .to(
+        [
+          {
+            y:
+              this.base.position.y -
+              (my_scene.selectedHeight - 0.01) / piece_scale.y,
+          },
+          {
+            y: catured_piece_y_dest,
+          },
+        ],
+        raise_duration
+      )
+      .easing(TWEEN.Easing.Cubic.InOut)
+      .start();
+
+    const height_offset = catured_piece_y_dest / piece_scale.y;
+    const dest_y = capturing_piece.height + height_offset + 0.1;
+    new TWEEN.Tween([
+      this.position,
+      this.tower_body.position,
+      this.top.position,
+    ])
+      .to(
+        [
+          {
+            x: capturing_piece.position.x,
+            z: capturing_piece.position.z,
+          },
+          { y: dest_y },
+          { y: dest_y },
+        ],
+        go_to_piece
+      )
+      .easing(TWEEN.Easing.Cubic.InOut)
+      .start();
+    await new Promise((resolve) => setTimeout(resolve, go_to_piece + pause));
+
+    const scale_factor = 2;
+    let dest_y_body =
+      (capturing_piece.height / 2 +
+        height_offset -
+        Rook.body.height / 2 -
+        (Rook.body.height * scale_factor - Rook.body.height) / 2) /
+      scale_factor;
+    const top_starting_height = Rook.base.height + Rook.body.height;
+    let dest_y_top =
+      capturing_piece.height - top_starting_height + 0.6 + height_offset;
+    capturing_piece.height / piece_scale.y;
+    new TWEEN.Tween([
+      this.tower_body.position,
+      this.top.position,
+      this.tower_body.scale,
+    ])
+      .to(
+        [
+          { y: dest_y_body },
+          { y: dest_y_top },
+          { x: scale_factor, y: scale_factor, z: scale_factor },
+        ],
+        descend1_duration
+      )
+      .easing(TWEEN.Easing.Cubic.InOut)
+      .start();
+    for (let block of this.tower_body.children) {
+      let x = Math.cos(block.rotation.y) * 0.6;
+      let z = Math.sin(-block.rotation.y) * 0.6;
+      new TWEEN.Tween(block.position)
+        .to({ x: x, z: z }, expandin_duration)
+        .easing(TWEEN.Easing.Bounce.Out)
+        .start();
+    }
+    await new Promise((resolve) =>
+      setTimeout(resolve, expandin_duration + pause)
+    );
+
+    for (let block of this.tower_body.children) {
+      new TWEEN.Tween(block.position)
+        .to({ x: 0, z: 0 }, squash_duration)
+        .easing(TWEEN.Easing.Back.In)
+        .start();
+    }
+    await new Promise((resolve) => setTimeout(resolve, squash_duration * 0.8));
+
+    new TWEEN.Tween(capturing_piece.scale)
+      .to(
+        {
+          x: 0.35 * capturing_piece.scale.x,
+          z: 0.35 * capturing_piece.scale.z,
+        },
+        squash_duration * 0.2
+      )
+      .start();
+    await new Promise((resolve) =>
+      setTimeout(resolve, squash_duration * 0.2 + pause)
+    );
+    const lost_pos = my_scene.getNextLostPiecePosition(capturing_piece.color);
+    capturing_piece.position.set(lost_pos.x, lost_pos.y, lost_pos.z);
+    capturing_piece.row = null;
+    capturing_piece.col = null;
+    if (capturing_piece.color == "white") {
+      my_scene.n_white_lost_pieces++;
+    } else {
+      this.n_black_lost_pieces++;
+    }
+
+    new TWEEN.Tween([
+      this.base.position,
+      this.tower_body.position,
+      this.tower_body.scale,
+      this.top.position,
+    ])
+      .to(
+        [{ y: 0 }, { y: 0 }, { x: 1, y: 1, z: 1 }, { y: 0 }],
+        descend2_duration
+      )
+      .easing(TWEEN.Easing.Cubic.InOut)
+      .start();
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, descend2_duration + pause)
+    );
   }
 
   update() {}
