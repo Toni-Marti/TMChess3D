@@ -4,7 +4,7 @@ import { AbstractPiece } from "./AbstractPiece.js";
 class Queen extends AbstractPiece {
   static height_piece = 1.79;
   constructor(material_set, row, col, color) {
-    super(material_set, row, col, color, 0.39);
+    super(material_set, row, col, color, 2, 0.39);
     var loader = new THREE.TextureLoader();
 
     const shape = new THREE.Shape();

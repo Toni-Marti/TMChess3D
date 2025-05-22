@@ -5,7 +5,7 @@ import { AbstractPiece } from "./AbstractPiece.js";
 class Bishop extends AbstractPiece {
   static height_piece = 1.685;
   constructor(material_set, row, col, color) {
-    super(material_set, row, col, color, 0.35);
+    super(material_set, row, col, color, 1.45, 0.35);
 
     const evaluator = new CSG.Evaluator();
 
