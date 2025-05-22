@@ -5,8 +5,8 @@ import * as PiceMaterialSets from "./Objects/Pieces/Materials/MaterialSetLibrary
 import { Board } from "./Objects/Board.js";
 import { ChessGame } from "./our_libs/chess/game_handler.js";
 import * as TWEEN from "../../libs/tween.module.js";
-import { MTLLoader } from "../libs/MTLLoader.js"
-import { OBJLoader } from "../libs/OBJLoader.js"
+import { MTLLoader } from "../libs/MTLLoader.js";
+import { OBJLoader } from "../libs/OBJLoader.js";
 
 const STATES = {
   SELECTING_PIECE: 0,
@@ -20,15 +20,16 @@ const STATES = {
 class MyScene extends THREE.Scene {
   constructor(myCanvas) {
     super();
+    this.scale_factor = 0.5 / 8;
 
     var objectLoader = new OBJLoader();
 
     objectLoader.load("Models/woodenstool.obj", (object) => {
       const textureLoader = new THREE.TextureLoader();
 
-      const maderaTexture = textureLoader.load('Models/color_wooden.jpg');
-      const normalTexture = textureLoader.load('Models/normal_wooden.jpg');
-      const roughnessTexture = textureLoader.load('Models/Roughness.jpg');
+      const maderaTexture = textureLoader.load("Models/color_wooden.jpg");
+      const normalTexture = textureLoader.load("Models/normal_wooden.jpg");
+      const roughnessTexture = textureLoader.load("Models/Roughness.jpg");
 
       object.traverse((child) => {
         if (child.isMesh) {
@@ -46,13 +47,7 @@ class MyScene extends THREE.Scene {
       object.position.set(0, -0.8, 0);
 
       this.add(object);
-
-
-     
     });
-
-
-
 
     this.gameState = STATES.BOARD_NOT_SET_UP;
     this.mouse = new THREE.Vector2();
@@ -79,9 +74,10 @@ class MyScene extends THREE.Scene {
     this.black_pieces = null;
     this.n_white_lost_pieces = 0;
     this.n_black_lost_pieces = 0;
+    this.cam_rotation_duration = 670;
     this.createPieces();
     this.positionAllPiecesAsLost();
-    this.setUpGame(750);
+    this.setUpGame(700);
     this.selectedHeight = 0.2;
     this.camera_high = false;
   }
@@ -189,6 +185,13 @@ class MyScene extends THREE.Scene {
   async setUpGame(wait_time = 0) {
     await new Promise((resolve) => setTimeout(resolve, wait_time));
 
+    if (
+      this.chessEngine != null &&
+      this.chessEngine.currentPlayer() == "black"
+    ) {
+      this.rotateCameraAroundBoard(this.cam_rotation_duration);
+    }
+    this.gameState = STATES.PLAYING_ANIMATION;
     this.chessEngine = new ChessGame();
     const set_up_duration = this.gameSetUpDesiredDuration();
     for (let color of ["white", "black"]) {
@@ -220,6 +223,18 @@ class MyScene extends THREE.Scene {
           (set_up_duration * distance) / max_distance,
           0.2
         );
+
+        new TWEEN.Tween(piece.scale)
+          .to(
+            {
+              x: this.scale_factor,
+              y: this.scale_factor,
+              z: this.scale_factor,
+            },
+            200
+          )
+          .easing(TWEEN.Easing.Cubic.InOut)
+          .start();
       }
     }
     this.n_black_lost_pieces = 0;
@@ -229,10 +244,8 @@ class MyScene extends THREE.Scene {
   }
 
   rotateCameraAroundBoard(duration) {
-    const startAngle =
-      this.chessEngine.currentPlayer() === "white" ? Math.PI : 0;
-    const endAngle =
-      this.chessEngine.currentPlayer() === "white" ? 0 : -Math.PI;
+    const startAngle = this.camera_parent.rotation.y;
+    const endAngle = startAngle + Math.PI;
 
     const startTime = performance.now();
 
@@ -273,9 +286,6 @@ class MyScene extends THREE.Scene {
 
   createPieces() {
     let i = 0;
-
-    let white_set = PiceMaterialSets.classic_white;
-    let black_set = PiceMaterialSets.classic_black;
 
     this.white_pieces = {
       r1: null,
@@ -324,14 +334,13 @@ class MyScene extends THREE.Scene {
         new Pieces.Pawn(material_set.clone(), undefined, undefined, color)
       );
 
-    const scale_factor = 0.5 / 8;
     for (let piece of pieces) {
       let row = piece.row;
       let col = piece.col;
       piece.scale.set(
-        piece.scale.x * scale_factor,
-        piece.scale.y * scale_factor,
-        piece.scale.z * scale_factor
+        piece.scale.x * this.scale_factor,
+        piece.scale.y * this.scale_factor,
+        piece.scale.z * this.scale_factor
       );
       piece.name = "piece";
       if (color === "black") {
@@ -529,7 +538,7 @@ class MyScene extends THREE.Scene {
           all_other_pieces.push(piece);
         }
       }
-      console.log(move_duration)
+      this.resetSquareHighlights();
       await piece.capture(
         captured_piece,
         all_other_pieces,
@@ -546,6 +555,7 @@ class MyScene extends THREE.Scene {
       const castling =
         moving_king && Math.abs(target_col - this.selectedPiece.col) > 1;
       move_duration = distance / AbstractPiece.SPEED;
+      this.resetSquareHighlights();
       await this.selectedPiece.move(target_pos, move_duration);
       if (castling) {
         const pieces =
@@ -566,68 +576,68 @@ class MyScene extends THREE.Scene {
     }
     this.selectedPiece.row = target_row;
     this.selectedPiece.col = target_col;
-    this.resetSquareHighlights();
-    let cam_rotation_duration = 670;
-    this.rotateCameraAroundBoard(cam_rotation_duration);
-    await new Promise((resolve) => setTimeout(resolve, cam_rotation_duration));
+    this.rotateCameraAroundBoard(this.cam_rotation_duration);
+    await new Promise((resolve) =>
+      setTimeout(resolve, this.cam_rotation_duration)
+    );
     this.selectedPiece = null;
     return;
   }
 
-  async onClick() {
-    let animate_y = async (piece, to_y, duration) => {
-      const startTime = performance.now();
-      const starting_y = piece.position.y;
-      let animator = {};
-      animator.promise = new Promise((resolve, reject) => {
-        animator.resolve = resolve;
-      });
+  async animate_y(piece, to_y, duration) {
+    const startTime = performance.now();
+    const starting_y = piece.position.y;
+    let animator = {};
+    animator.promise = new Promise((resolve, reject) => {
+      animator.resolve = resolve;
+    });
 
-      const animate = (time) => {
-        console.log();
-        const elapsed = time - startTime;
-        const t = Math.min(elapsed / duration, 1);
-        piece.position.y =
-          (to_y - starting_y) * TWEEN.Easing.Quadratic.Out(t) + starting_y;
+    const animate = (time) => {
+      console.log();
+      const elapsed = time - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      piece.position.y =
+        (to_y - starting_y) * TWEEN.Easing.Quadratic.Out(t) + starting_y;
 
-        if (t < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          animator.resolve();
-        }
-      };
-      requestAnimationFrame(animate);
-      await animator.promise;
-    };
-
-    let release_selected_piece = async () => {
-      this.gameState = STATES.PLAYING_ANIMATION;
-      await animate_y(
-        this.selectedPiece,
-        this.selectedPiece.position.y - this.selectedHeight,
-        75
-      );
-
-      this.selectedPiece = null;
-      this.gameState = STATES.SELECTING_PIECE;
-    };
-    const select_piece = async (piece) => {
-      if (this.selectedPiece) {
-        this.resetSquareHighlights();
-        this.highlightSquares(
-          this.chessEngine.availableMoves(piece.row, piece.col)
-        );
-        await release_selected_piece();
+      if (t < 1) {
+        requestAnimationFrame(animate);
       } else {
-        this.highlightSquares(
-          this.chessEngine.availableMoves(piece.row, piece.col)
-        );
+        animator.resolve();
       }
-      await animate_y(piece, piece.position.y + this.selectedHeight, 75);
-      this.selectedPiece = piece;
-      this.gameState = STATES.SELECTED_PIECE;
     };
+    requestAnimationFrame(animate);
+    await animator.promise;
+  }
 
+  async release_selected_piece() {
+    this.gameState = STATES.PLAYING_ANIMATION;
+    await this.animate_y(
+      this.selectedPiece,
+      this.selectedPiece.position.y - this.selectedHeight,
+      75
+    );
+
+    this.selectedPiece = null;
+    this.gameState = STATES.SELECTING_PIECE;
+  }
+  async select_piece(piece) {
+    if (this.selectedPiece) {
+      this.resetSquareHighlights();
+      this.highlightSquares(
+        this.chessEngine.availableMoves(piece.row, piece.col)
+      );
+      await this.release_selected_piece();
+    } else {
+      this.highlightSquares(
+        this.chessEngine.availableMoves(piece.row, piece.col)
+      );
+    }
+    await this.animate_y(piece, piece.position.y + this.selectedHeight, 75);
+    this.selectedPiece = piece;
+    this.gameState = STATES.SELECTED_PIECE;
+  }
+
+  async onClick() {
     let intersects;
     switch (this.gameState) {
       case STATES.BOARD_NOT_SET_UP:
@@ -647,7 +657,7 @@ class MyScene extends THREE.Scene {
         if (this.chessEngine.availableMoves(piece.row, piece.col).length === 0)
           break;
 
-        select_piece(piece);
+        this.select_piece(piece);
         break;
 
       case STATES.SELECTED_PIECE:
@@ -693,7 +703,7 @@ class MyScene extends THREE.Scene {
                 clicked_piece.col
               ).length > 0
             ) {
-              await select_piece(clicked_piece);
+              await this.select_piece(clicked_piece);
             }
             break;
           } else {
@@ -711,7 +721,7 @@ class MyScene extends THREE.Scene {
 
         if (square === null) {
           this.resetSquareHighlights();
-          release_selected_piece();
+          this.release_selected_piece();
           break;
         }
 
@@ -730,7 +740,7 @@ class MyScene extends THREE.Scene {
 
         if (!can_move_to_square) {
           this.resetSquareHighlights();
-          release_selected_piece();
+          this.release_selected_piece();
           break;
         }
 
@@ -804,6 +814,13 @@ class MyScene extends THREE.Scene {
 
           requestAnimationFrame(animate);
         });
+      case "s":
+        if (this.gameState == STATES.PLAYING_ANIMATION) break;
+        if (this.gameState == STATES.SELECTED_PIECE) {
+          this.resetSquareHighlights();
+          await this.release_selected_piece();
+        }
+        this.setUpGame();
     }
   }
 

@@ -5,7 +5,7 @@ import { AbstractPiece } from "./AbstractPiece.js";
 class King extends AbstractPiece {
   static height_piece = 2.02;
   constructor(material_set, row, col, color) {
-    super(material_set, row, col, color, 0.4);
+    super(material_set, row, col, color, 2, 0.4);
 
     const evaluator = new CSG.Evaluator();
 

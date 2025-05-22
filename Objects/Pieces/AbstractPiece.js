@@ -4,14 +4,15 @@ import { Base } from "./base.js";
 
 class AbstractPiece extends THREE.Object3D {
   static SPEED = 1 / 900;
-  static height_piece = null;
-  constructor(material_set, row, col, color, radius = 0.4) {
+  constructor(material_set, row, col, color, height, radius = 0.4) {
     super();
     this.material_set = material_set;
     this.row = row;
     this.col = col;
     this.color = color;
-    this.add(new Base(material_set, radius));
+    this.base = new Base(material_set, radius);
+    this.height = height;
+    this.add(this.base);
   }
 
   update() {}
@@ -91,7 +92,13 @@ class AbstractPiece extends THREE.Object3D {
     return Math.max(captured_piece_duration, my_piece_duration);
   }
 
-  async capture(capturing_piece, all_other_pieces, ending_pos, duration, my_scene) {
+  async capture(
+    capturing_piece,
+    all_other_pieces,
+    ending_pos,
+    duration,
+    my_scene
+  ) {
     const desired_duration = this.getDesiredCaptureDuration(
       capturing_piece,
       ending_pos,
@@ -105,7 +112,8 @@ class AbstractPiece extends THREE.Object3D {
     );
     const captured_piece_duration =
       (capturing_piece.position.distanceTo(captured_final_pos) /
-        AbstractPiece.SPEED)* factor;
+        AbstractPiece.SPEED) *
+      factor;
 
     my_scene.positionPieceAsLost(
       capturing_piece,
@@ -114,8 +122,9 @@ class AbstractPiece extends THREE.Object3D {
     );
     this.descend_to(ending_pos, this_duration);
 
-    
-    await new Promise((resolve) => setTimeout(resolve, Math.max(this_duration, captured_piece_duration)));
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.max(this_duration, captured_piece_duration))
+    );
   }
 }
 

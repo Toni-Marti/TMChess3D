@@ -8,7 +8,7 @@ import { AbstractPiece } from "./AbstractPiece.js";
 
 class Knight extends AbstractPiece {
   constructor(material_set, row, col, color) {
-    super(material_set, row, col, color, 0.35);
+    super(material_set, row, col, color, 1.45, 0.35);
     this.horse = this.createHorse();
     this.add(this.horse);
   }
